@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>HSK 1 · 2 · 3 — Словари с озвучкой</title>
+<title>HSK 1 · 2 · 3 · 4 — Словари с озвучкой</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -332,10 +332,7 @@
 </head>
 <body>
 
-<!-- Кнопка возврата к прописям -->
 <a class="back-to-worksheets" href="index.html" title="Вернуться к прописям">← Прописи</a>
-
-<!-- Индикатор офлайна -->
 <div class="offline-badge" id="offlineBadge">Офлайн-режим</div>
 
 <div class="container">
@@ -357,7 +354,7 @@
     <button class="tab-btn active" data-tab="hsk1">📘 HSK 1 · 300 слов</button>
     <button class="tab-btn" data-tab="hsk2">📗 HSK 2 · 200 слов</button>
     <button class="tab-btn" data-tab="hsk3">📙 HSK 3 · 500 слов</button>
-   <button class="tab-btn" data-tab="hsk4">📕 HSK 4 · 1000 слов</button>
+    <button class="tab-btn" data-tab="hsk4">📕 HSK 4 · 1000 слов</button>
   </div>
 
   <!-- ===== HSK 1 ===== -->
@@ -392,7 +389,7 @@
     <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 10 · 451–500</span></div><div class="vocab-grid" id="hsk3-block10"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
   </div>
 
-   <!-- ===== HSK 4 ===== -->
+  <!-- ===== HSK 4 ===== -->
   <div id="tab-hsk4" class="tab-content">
     <div class="page"><div class="header"><h1>📕 HSK 4 · Словарь</h1><span class="block-tag">Блок 1 · 1–50</span></div><div class="vocab-grid" id="hsk4-block1"></div><div class="footer-note">HSK 4 · 1000 слов · для печати А4</div></div>
     <div class="page"><div class="header"><h1>📕 HSK 4 · Словарь</h1><span class="block-tag">Блок 2 · 51–100</span></div><div class="vocab-grid" id="hsk4-block2"></div><div class="footer-note">HSK 4 · 1000 слов · для печати А4</div></div>
@@ -427,13 +424,18 @@
 <script src="dictionary-data.js"></script>
 <script>
 // ================================================================
-// АУДИО: MP3 из Audio/ + fallback на браузерный голос
+// АУДИО: MP3 из Audio/hsk1..hsk4/ + fallback на браузерный голос
 // ================================================================
-const AUDIO_DIR = 'Audio/';
+const AUDIO_DIRS = [
+  'Audio/hsk1/',
+  'Audio/hsk2/',
+  'Audio/hsk3/',
+  'Audio/hsk4/',
+  'Audio/'          // fallback на плоскую папку
+];
 const AUDIO_PREFIX = 'cmn-';
 const audioCache = new Map(); // ключ -> { available: bool|null, audio: Audio|null }
 
-// Браузерный голос
 let zhVoice = null;
 function pickZhVoice() {
   if (!('speechSynthesis' in window)) return;
@@ -457,40 +459,33 @@ function speakWithBrowser(text) {
   speechSynthesis.speak(u);
 }
 
-function audioPathFor(text) {
-  return AUDIO_DIR + AUDIO_PREFIX + text + '.mp3';
-}
-
 function speakChinese(text) {
   if (!text) return;
   const key = text;
   const cached = audioCache.get(key);
 
-  // Если файла раньше не нашли — сразу голос
-  if (cached && cached.available === false) {
+  if (cached && cached.available === false) { speakWithBrowser(text); return; }
+  if (cached && cached.audio) { playAudio(cached.audio, text, key); return; }
+
+  tryNextCandidate(AUDIO_DIRS, 0, text, key);
+}
+
+function tryNextCandidate(dirs, index, text, key) {
+  if (index >= dirs.length) {
+    audioCache.set(key, { available: false, audio: null });
     speakWithBrowser(text);
     return;
   }
 
-  // Если уже есть рабочий Audio — используем его
-  if (cached && cached.audio) {
-    playAudio(cached.audio, text, key);
-    return;
-  }
-
-  // Первый раз — пробуем mp3
-  const audio = new Audio(audioPathFor(text));
+  const audio = new Audio(dirs[index] + AUDIO_PREFIX + text + '.mp3');
   audio.preload = 'auto';
   let resolved = false;
 
   const onError = () => {
     if (resolved) return;
     resolved = true;
-    audioCache.set(key, { available: false, audio: null });
-    // Файла нет — браузерный голос
-    speakWithBrowser(text);
+    tryNextCandidate(dirs, index + 1, text, key);
   };
-
   const onCanPlay = () => {
     if (resolved) return;
     resolved = true;
@@ -511,7 +506,6 @@ function playAudio(audio, text, key) {
     const p = audio.play();
     if (p && p.catch) {
       p.catch(() => {
-        // Не смогли проиграть — отдаём браузеру
         audioCache.set(key, { available: false, audio: null });
         speakWithBrowser(text);
       });
@@ -543,7 +537,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-// ================================================================
 // ================================================================
 // ДАННЫЕ
 // ================================================================
@@ -619,22 +612,28 @@ function renderCards(containerId, words, getPinyin, getRu, getEmoji, getExample)
 }
 
 // ================================================================
-// ЗАПУСК РЕНДЕРА HSK 1/2/3
+// ЗАПУСК РЕНДЕРА HSK 1 / 2 / 3 / 4
 // ================================================================
-renderCards('hsk1-block1', hsk1.slice(0, 50), w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w]);
+renderCards('hsk1-block1', hsk1.slice(0, 50),   w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w]);
 renderCards('hsk1-block2', hsk1.slice(50, 100), w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w]);
 renderCards('hsk1-block3', hsk1.slice(100, 150), w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w]);
 renderCards('hsk1-block4', hsk1.slice(150, 200), w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w]);
 renderCards('hsk1-block5', hsk1.slice(200, 250), w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w]);
 renderCards('hsk1-block6', hsk1.slice(250, 300), w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w]);
 
-renderCards('hsk2-block1', hsk2.slice(0, 50), w => py2[w], w => ru2[w], w => emoji2[w], w => ex2[w]);
+renderCards('hsk2-block1', hsk2.slice(0, 50),   w => py2[w], w => ru2[w], w => emoji2[w], w => ex2[w]);
 renderCards('hsk2-block2', hsk2.slice(50, 100), w => py2[w], w => ru2[w], w => emoji2[w], w => ex2[w]);
 renderCards('hsk2-block3', hsk2.slice(100, 150), w => py2[w], w => ru2[w], w => emoji2[w], w => ex2[w]);
 renderCards('hsk2-block4', hsk2.slice(150, 200), w => py2[w], w => ru2[w], w => emoji2[w], w => ex2[w]);
 
 for (let i = 0; i < 10; i++) {
-  renderCards(`hsk3-block${i + 1}`, hsk3.slice(i * 50, i * 50 + 50), w => py3[w], w => ru3[w], w => emoji3[w], w => ex3[w]);
+  renderCards(`hsk3-block${i + 1}`, hsk3.slice(i * 50, i * 50 + 50),
+    w => py3[w], w => ru3[w], w => emoji3[w], w => ex3[w]);
+}
+
+for (let i = 0; i < 20; i++) {
+  renderCards(`hsk4-block${i + 1}`, hsk4.slice(i * 50, i * 50 + 50),
+    w => py4[w], w => ru4[w], w => emoji4[w], w => ex4[w]);
 }
 
 // ================================================================
@@ -659,12 +658,13 @@ document.addEventListener('click', e => {
   const resultsGrid = document.getElementById('searchGrid');
   const resultsTitle = document.getElementById('searchTitle');
 
-const INDEX = [
-  ...hsk1.map(w => ({ word: w, level: 1, py: py1[w] || '', ru: ru1[w] || '', emoji: emoji1[w] || '📌', ex: ex1[w] || '' })),
-  ...hsk2.map(w => ({ word: w, level: 2, py: py2[w] || '', ru: ru2[w] || '', emoji: emoji2[w] || '📌', ex: ex2[w] || '' })),
-  ...hsk3.map(w => ({ word: w, level: 3, py: py3[w] || '', ru: ru3[w] || '', emoji: emoji3[w] || '📌', ex: ex3[w] || '' })),
-  ...hsk4.map(w => ({ word: w, level: 4, py: py4[w] || '', ru: ru4[w] || '', emoji: emoji4[w] || '📌', ex: ex4[w] || '' }))
-];
+  const INDEX = [
+    ...hsk1.map(w => ({ word: w, level: 1, py: py1[w] || '', ru: ru1[w] || '', emoji: emoji1[w] || '📌', ex: ex1[w] || '' })),
+    ...hsk2.map(w => ({ word: w, level: 2, py: py2[w] || '', ru: ru2[w] || '', emoji: emoji2[w] || '📌', ex: ex2[w] || '' })),
+    ...hsk3.map(w => ({ word: w, level: 3, py: py3[w] || '', ru: ru3[w] || '', emoji: emoji3[w] || '📌', ex: ex3[w] || '' })),
+    ...hsk4.map(w => ({ word: w, level: 4, py: py4[w] || '', ru: ru4[w] || '', emoji: emoji4[w] || '📌', ex: ex4[w] || '' }))
+  ];
+
   const norm = (s) => String(s ?? '')
     .toLowerCase()
     .normalize('NFD')
@@ -733,11 +733,11 @@ const INDEX = [
     const items = searchAll(q);
     resultsTitle.textContent = `Результаты поиска: ${items.length}`;
 
-    const byLevel = { 1: [], 2: [], 3: [] };
+    const byLevel = { 1: [], 2: [], 3: [], 4: [] };
     items.forEach(it => byLevel[it.level].push(it));
 
     countEl.innerHTML = items.length
-      ? `<b>${items.length}</b> найдено — HSK 1: ${byLevel[1].length}, HSK 2: ${byLevel[2].length}, HSK 3: ${byLevel[3].length}`
+      ? `<b>${items.length}</b> найдено — HSK 1: ${byLevel[1].length}, HSK 2: ${byLevel[2].length}, HSK 3: ${byLevel[3].length}, HSK 4: ${byLevel[4].length}`
       : `Ничего не найдено`;
 
     resultsGrid.innerHTML = '';
@@ -745,7 +745,8 @@ const INDEX = [
       resultsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 12px;color:#8fa3bb">Попробуйте другой запрос — например, «吃», «chi» или «есть».</div>';
     } else {
       const frag = document.createDocumentFragment();
-      [...byLevel[1], ...byLevel[2], ...byLevel[3]].forEach(it => frag.appendChild(renderResultCard(it)));
+      [...byLevel[1], ...byLevel[2], ...byLevel[3], ...byLevel[4]]
+        .forEach(it => frag.appendChild(renderResultCard(it)));
       resultsGrid.appendChild(frag);
     }
 
