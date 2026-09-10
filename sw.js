@@ -8,11 +8,11 @@ const ASSETS = [
   './grammar.html',
   './hsk-data.js',
   './manifest.json',
-  './icon-boot.js',
   'https://cdn.jsdelivr.net/npm/hanzi-writer@3.7/dist/hanzi-writer.min.js',
   'https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js'
 ];
 
+// Установка — кэшируем статику
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE)
@@ -23,6 +23,7 @@ self.addEventListener('install', (e) => {
   );
 });
 
+// Активация — чистим старые версии
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
@@ -33,13 +34,16 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+// Сообщения от страниц
 self.addEventListener('message', (e) => {
   if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
+// Перехват запросов
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
 
+  // Навигация: сеть → кэш → index.html
   if (e.request.mode === 'navigate') {
     e.respondWith((async () => {
       try {
@@ -55,6 +59,7 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
+  // Остальное: cache-first, фоном обновляем
   e.respondWith((async () => {
     const cached = await caches.match(e.request);
     if (cached) {
