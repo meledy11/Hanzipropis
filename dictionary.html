@@ -116,6 +116,7 @@
     font-weight: 700;
     color: #0f1f30;
     cursor: pointer;
+    user-select: none;
   }
   .card .chinese:hover { color: #2c6b9e; }
   .card .pinyin {
@@ -142,6 +143,7 @@
     line-height: 1.6;
     border-left: 3px solid #7fa9c9;
     cursor: pointer;
+    user-select: none;
   }
   .card .example:hover { background: #e8eff8; }
   .card .example .zh { font-weight: 600; color: #0d263b; }
@@ -228,7 +230,6 @@
   }
   .search-count b { color: #1a3c5e; }
 
-  /* когда идёт поиск — скрываем вкладки HSK 1/2/3 и заголовки блоков */
   body.searching .tabs { display: none; }
   body.searching .page { display: none; }
   body.searching #search-results { display: block; }
@@ -401,24 +402,99 @@
 <script src="dictionary-data.js"></script>
 <script>
 // ================================================================
-// ОЗВУЧКА
+// АУДИО: MP3 из Audio/ + fallback на браузерный голос
 // ================================================================
-function speakChinese(text) {
-  if (!window.speechSynthesis) { alert('Ваш браузер не поддерживает озвучку'); return; }
-  window.speechSynthesis.cancel();
+const AUDIO_DIR = 'Audio/';
+const AUDIO_PREFIX = 'cmn-';
+const audioCache = new Map(); // ключ -> { available: bool|null, audio: Audio|null }
+
+// Браузерный голос
+let zhVoice = null;
+function pickZhVoice() {
+  if (!('speechSynthesis' in window)) return;
+  const voices = speechSynthesis.getVoices() || [];
+  zhVoice = voices.find(v => /zh[-_]?CN/i.test(v.lang)) || voices.find(v => v.lang.startsWith('zh')) || null;
+}
+if ('speechSynthesis' in window) {
+  pickZhVoice();
+  speechSynthesis.onvoiceschanged = pickZhVoice;
+}
+
+function speakWithBrowser(text) {
+  if (!('speechSynthesis' in window)) return;
+  try { speechSynthesis.cancel(); } catch (e) {}
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'zh-CN';
   u.rate = 0.85;
   u.pitch = 1;
   u.volume = 1;
-  const voices = window.speechSynthesis.getVoices();
-  const zhVoice = voices.find(v => v.lang.startsWith('zh'));
   if (zhVoice) u.voice = zhVoice;
-  window.speechSynthesis.speak(u);
+  speechSynthesis.speak(u);
 }
-if (window.speechSynthesis) {
-  window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+
+function audioPathFor(text) {
+  return AUDIO_DIR + AUDIO_PREFIX + text + '.mp3';
+}
+
+function speakChinese(text) {
+  if (!text) return;
+  const key = text;
+  const cached = audioCache.get(key);
+
+  // Если файла раньше не нашли — сразу голос
+  if (cached && cached.available === false) {
+    speakWithBrowser(text);
+    return;
+  }
+
+  // Если уже есть рабочий Audio — используем его
+  if (cached && cached.audio) {
+    playAudio(cached.audio, text, key);
+    return;
+  }
+
+  // Первый раз — пробуем mp3
+  const audio = new Audio(audioPathFor(text));
+  audio.preload = 'auto';
+  let resolved = false;
+
+  const onError = () => {
+    if (resolved) return;
+    resolved = true;
+    audioCache.set(key, { available: false, audio: null });
+    // Файла нет — браузерный голос
+    speakWithBrowser(text);
+  };
+
+  const onCanPlay = () => {
+    if (resolved) return;
+    resolved = true;
+    audioCache.set(key, { available: true, audio });
+    playAudio(audio, text, key);
+  };
+
+  audio.addEventListener('error', onError, { once: true });
+  audio.addEventListener('canplaythrough', onCanPlay, { once: true });
+  audio.addEventListener('loadeddata', onCanPlay, { once: true });
+
+  try { audio.load(); } catch (e) { onError(); }
+}
+
+function playAudio(audio, text, key) {
+  try {
+    audio.currentTime = 0;
+    const p = audio.play();
+    if (p && p.catch) {
+      p.catch(() => {
+        // Не смогли проиграть — отдаём браузеру
+        audioCache.set(key, { available: false, audio: null });
+        speakWithBrowser(text);
+      });
+    }
+  } catch (e) {
+    audioCache.set(key, { available: false, audio: null });
+    speakWithBrowser(text);
+  }
 }
 
 // ================================================================
@@ -426,7 +502,6 @@ if (window.speechSynthesis) {
 // ================================================================
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', function () {
-    // сброс поиска
     if (document.body.classList.contains('searching')) {
       const input = document.getElementById('searchInput');
       input.value = '';
@@ -545,7 +620,6 @@ document.addEventListener('click', e => {
   const resultsGrid = document.getElementById('searchGrid');
   const resultsTitle = document.getElementById('searchTitle');
 
-  // Единый индекс
   const INDEX = [
     ...hsk1.map(w => ({ word: w, level: 1, py: py1[w] || '', ru: ru1[w] || '', emoji: emoji1[w] || '📌', ex: ex1[w] || '' })),
     ...hsk2.map(w => ({ word: w, level: 2, py: py2[w] || '', ru: ru2[w] || '', emoji: emoji2[w] || '📌', ex: ex2[w] || '' })),
@@ -659,7 +733,6 @@ document.addEventListener('click', e => {
     input.focus();
   });
 
-  // Быстрый фокус по "/"
   document.addEventListener('keydown', e => {
     if (e.key === '/' && document.activeElement !== input) {
       e.preventDefault();
@@ -668,7 +741,6 @@ document.addEventListener('click', e => {
     }
   });
 
-  // Восстановление поиска при возврате
   const savedQ = sessionStorage.getItem('dict-search') || '';
   if (savedQ) {
     input.value = savedQ;
