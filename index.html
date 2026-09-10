@@ -94,7 +94,6 @@
     }
     .menu button:active { background: #eef2f7; }
 
-    /* 7 кнопок в панели вкладок */
     .tabs {
       position: sticky; top: calc(env(safe-area-inset-top) + 108px); z-index: 25;
       display: grid; grid-template-columns: repeat(7, 1fr);
@@ -406,18 +405,121 @@
 
     input.value = '而实候班哈举';
 
-    // ---------- УТИЛИТЫ ----------
+    // ============================================================
+    // АУДИО: сначала MP3, если нет — браузерный голос
+    // ============================================================
+    const AUDIO_DIR = 'Audio/';
+    const AUDIO_PREFIX = 'cmn-';
+    const audioCache = new Map(); // char -> {available: bool|null, audio: Audio}
+
+    // Предварительно настраиваем голос браузера
+    let zhVoice = null;
+    function pickZhVoice() {
+      if (!('speechSynthesis' in window)) return;
+      const voices = speechSynthesis.getVoices() || [];
+      zhVoice = voices.find(v => /zh[-_]?CN/i.test(v.lang)) || voices.find(v => v.lang.startsWith('zh')) || null;
+    }
+    if ('speechSynthesis' in window) {
+      pickZhVoice();
+      speechSynthesis.onvoiceschanged = pickZhVoice;
+    }
+
+    // Браузерная озвучка — запасной вариант
+    function speakWithBrowser(text) {
+      if (!('speechSynthesis' in window)) { statusEl.textContent = 'Синтез речи недоступен'; return; }
+      try { speechSynthesis.cancel(); } catch (e) {}
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'zh-CN';
+      u.rate = 0.85;
+      u.pitch = 1;
+      u.volume = 1;
+      if (zhVoice) u.voice = zhVoice;
+      speechSynthesis.speak(u);
+    }
+
+    // Путь к файлу для слова/иероглифа
+    function audioPathFor(text) {
+      return AUDIO_DIR + AUDIO_PREFIX + text + '.mp3';
+    }
+
+    // Пробуем проиграть MP3; если файла нет — отдаём браузеру
+    function speakChinese(text, { force = false } = {}) {
+      if (!text) return;
+      const key = text;
+      const cached = audioCache.get(key);
+
+      // Если файла раньше не нашли — сразу на голос, если не force
+      if (!force && cached && cached.available === false) {
+        speakWithBrowser(text);
+        return;
+      }
+
+      // Если уже есть проигрыватель — используем его
+      if (cached && cached.audio) {
+        playAudio(cached.audio, text, key);
+        return;
+      }
+
+      // Первый раз — пробуем загрузить mp3
+      const audio = new Audio(audioPathFor(text));
+      audio.preload = 'auto';
+
+      let resolved = false;
+
+      const onError = () => {
+        if (resolved) return;
+        resolved = true;
+        audioCache.set(key, { available: false, audio: null });
+        // Файла нет — браузерный голос
+        speakWithBrowser(text);
+      };
+
+      const onCanPlay = () => {
+        if (resolved) return;
+        resolved = true;
+        audioCache.set(key, { available: true, audio });
+        playAudio(audio, text, key);
+      };
+
+      audio.addEventListener('error', onError, { once: true });
+      audio.addEventListener('canplaythrough', onCanPlay, { once: true });
+
+      // На случай, если canplaythrough не сработает, но ошибка не прилетит
+      audio.addEventListener('loadeddata', onCanPlay, { once: true });
+
+      try {
+        audio.load();
+      } catch (e) {
+        onError();
+      }
+    }
+
+    // Воспроизведение с обработкой ошибок (на случай, если файл сломается после кэширования)
+    function playAudio(audio, text, key) {
+      try {
+        audio.currentTime = 0;
+        const p = audio.play();
+        if (p && p.catch) {
+          p.catch(() => {
+            // Не смогли проиграть — браузерный голос
+            audioCache.set(key, { available: false, audio: null });
+            speakWithBrowser(text);
+          });
+        }
+      } catch (e) {
+        audioCache.set(key, { available: false, audio: null });
+        speakWithBrowser(text);
+      }
+    }
+
+    // ============================================================
+    // УТИЛИТЫ
+    // ============================================================
     function orderedChineseChars(text) { return [...text].filter(ch => /\p{Script=Han}/u.test(ch)); }
     function uniqueChars(chars) { return [...new Set(chars)]; }
     function esc(v) { return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
     function getPinyin(char) { try { if (window.pinyinPro?.pinyin) return window.pinyinPro.pinyin(char, { toneType: 'symbol' }); } catch (e) {} return ''; }
     async function loadData(char) { if (dataCache.has(char)) return dataCache.get(char); const data = await HanziWriter.loadCharacterData(char); dataCache.set(char, data); return data; }
-    function speakChar(char) {
-      if (!('speechSynthesis' in window)) { statusEl.textContent = 'Синтез речи недоступен'; return; }
-      speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(char); u.lang = 'zh-CN'; u.rate = 0.75;
-      speechSynthesis.speak(u);
-    }
 
     // ---------- SVG ----------
     function strokeSvg(strokes, active, mode) {
@@ -453,7 +555,7 @@
         '<div class="card-body">' +
           '<div class="writer-wrap"><div id="writer-' + code + '" class="writer-box"></div></div>' +
           '<div class="actions">' +
-            '<button type="button" data-action="speak" data-char="' + esc(item.char) + '">Звук</button>' +
+            '<button type="button" data-action="speak" data-char="' + esc(item.char) + '">🔊 Звук</button>' +
             '<button type="button" data-action="animate" data-char="' + esc(item.char) + '">Анимация</button>' +
             '<button type="button" data-action="quiz" data-char="' + esc(item.char) + '" class="primary-action">Практика</button>' +
             '<button type="button" data-action="reset" data-char="' + esc(item.char) + '">Сброс</button>' +
@@ -839,13 +941,10 @@
     tabHsk2.addEventListener('click', () => showTab('hsk2'));
     tabHsk3.addEventListener('click', () => showTab('hsk3'));
 
-    // Переход на страницу грамматики — в том же окне
     tabGrammar.addEventListener('click', () => {
       try { saveCurrent(); } catch (e) {}
       location.href = 'grammar.html';
     });
-
-    // Переход на страницу словаря
     tabDict.addEventListener('click', () => {
       try { saveCurrent(); } catch (e) {}
       location.href = 'dictionary.html';
@@ -867,7 +966,8 @@
       importFile.value = '';
     });
     downloadPrintBtn.addEventListener('click', downloadPrintablePage);
-    pdfBtn.addEventListener('click', downloadPdf);
+    pdfBtn.addEventListener('click', downloadPDF);
+    function downloadPDF() { downloadPdf(); }
     clearBtn.addEventListener('click', () => {
       input.value = ''; selectedMap = {};
       [1, 2, 3].forEach(l => hskSelectedSets[l].clear());
@@ -900,7 +1000,7 @@
         return;
       }
       const ch = btn.dataset.char;
-      if (action === 'speak') { speakChar(ch); return; }
+      if (action === 'speak') { speakChinese(ch); return; }
       const w = writers.get(ch);
       if (!w) { statusEl.textContent = 'Плеер не готов для «' + ch + '»'; return; }
       if (action === 'animate') w.animateCharacter();
