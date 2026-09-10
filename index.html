@@ -5,18 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="theme-color" content="#2563eb">
+  <meta name="theme-color" content="#ffffff">
   <title>Прописи иероглифов · HSK 1-3</title>
-
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%232563eb'/%3E%3Ctext x='256' y='372' font-family='serif' font-size='340' font-weight='700' text-anchor='middle' fill='%23ffffff'%3E%E5%AD%97%3C/text%3E%3C/svg%3E">
-  <link rel="apple-touch-icon" href="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%232563eb'/%3E%3Ctext x='256' y='372' font-family='serif' font-size='340' font-weight='700' text-anchor='middle' fill='%23ffffff'%3E%E5%AD%97%3C/text%3E%3C/svg%3E">
-
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.7/dist/hanzi-writer.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js"></script>
+  <!-- ВНЕШНИЙ МАССИВ HSK1-3 -->
   <script src="hsk-data.js"></script>
-
   <style>
     :root {
       --ink: #1a1f2b;
@@ -353,6 +347,7 @@
     // ---------- ДАННЫЕ (из hsk-data.js) ----------
     const HSK_DATA = window.HSK_DATA || { 1: [], 2: [], 3: [] };
 
+    // ---------- ЭЛЕМЕНТЫ ----------
     const input = document.getElementById('input');
     const makeBtn = document.getElementById('makeBtn');
     const menuBtn = document.getElementById('menuBtn');
@@ -386,6 +381,7 @@
 
     input.value = '而实候班哈举';
 
+    // ---------- УТИЛИТЫ ----------
     function orderedChineseChars(text) { return [...text].filter(ch => /\p{Script=Han}/u.test(ch)); }
     function uniqueChars(chars) { return [...new Set(chars)]; }
     function esc(v) { return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -398,6 +394,7 @@
       speechSynthesis.speak(u);
     }
 
+    // ---------- SVG ----------
     function strokeSvg(strokes, active, mode) {
       const paths = strokes.map((d, i) => {
         let fill = '#e5e7eb';
@@ -416,6 +413,7 @@
       return cells;
     }
 
+    // ---------- КАРТОЧКА ----------
     function cardHtml(item) {
       const on = selectedMap[item.char] !== false;
       const checkedAttr = on ? ' checked' : '';
@@ -441,6 +439,7 @@
       '</article>';
     }
 
+    // ---------- СТРОКА ПРОПИСИ ----------
     function worksheetRow(item) {
       if (item.error) return '<div class="worksheet-row"><div class="left-info"><div class="print-pinyin">' + esc(item.pinyin) + '</div><div class="grid-cell big-char-cell"></div></div><div class="error-box">' + esc(item.char) + ' — черты не загружены</div></div>';
       return '<div class="worksheet-row">' +
@@ -458,6 +457,7 @@
       return 6.35;
     }
 
+    // ---------- ПЛЕЕР ----------
     function createWriter(item, attempt = 0) {
       if (item.error) return;
       if (writers.has(item.char)) return;
@@ -477,6 +477,7 @@
       } catch (err) { console.warn('Ошибка плеера', item.char, err); }
     }
 
+    // ---------- ХРАНИЛИЩЕ ----------
     function currentState() { return { input: input.value, selectedMap, savedAt: new Date().toISOString() }; }
     function saveCurrent() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState())); } catch (e) {} }
     function loadSaved() {
@@ -488,6 +489,7 @@
       } catch (e) {}
     }
 
+    // ---------- ГЕНЕРАЦИЯ ----------
     function selectedItemsForPrint(all) { return all.filter(it => selectedMap[it.char] !== false); }
 
     function renderCards(animationItems) {
@@ -544,6 +546,7 @@
     let timer = 0;
     function scheduleGenerate() { clearTimeout(timer); timer = setTimeout(() => { generate(); saveCurrent(); }, 420); }
 
+    // ---------- HSK ЛОГИКА ----------
     function renderHskGrid(level) {
       const words = HSK_DATA[level] || [];
       const grid = document.getElementById('hsk' + level + 'Grid');
@@ -619,6 +622,7 @@
       if (changed) [1, 2, 3].forEach(renderHskGrid);
     }
 
+    // ---------- ЭКСПОРТ ----------
     function downloadBlob(name, text, type) {
       const blob = new Blob([text], { type });
       const url = URL.createObjectURL(blob);
@@ -644,7 +648,7 @@
 
     function importStateFromText(text) {
       const s = JSON.parse(text);
-               if (typeof s.input === 'string') input.value = s.input;
+      if (typeof s.input === 'string') input.value = s.input;
       selectedMap = (s.selectedMap && typeof s.selectedMap === 'object') ? s.selectedMap : {};
       saveCurrent(); generate();
       statusEl.textContent = 'Импортировано';
@@ -657,6 +661,7 @@
       statusEl.textContent = 'HTML для печати скачан';
     }
 
+    // ---------- PDF ----------
     function tok(d) { return d.match(/[MLQCZmlqcz]|-?\d*\.?\d+(?:e[-+]?\d+)?/g) || []; }
     function f(n) { return Number(n.toFixed(3)).toString(); }
     function pathToPdf(d) {
@@ -667,10 +672,10 @@
         if (cmd === 'M' || cmd === 'm') { x = (cmd === 'm' ? x : 0) + num(); y = (cmd === 'm' ? y : 0) + num(); out.push(f(x) + ' ' + f(y) + ' m'); cmd = cmd === 'm' ? 'l' : 'L'; }
         else if (cmd === 'L' || cmd === 'l') { x = (cmd === 'l' ? x : 0) + num(); y = (cmd === 'l' ? y : 0) + num(); out.push(f(x) + ' ' + f(y) + ' l'); }
         else if (cmd === 'Q' || cmd === 'q') {
-          const x1 = (cmd === 'q' ? x : 0) + num(), y1 = (cmd === 'q' ? y : 0) const + num();
-          const x2 c = (cmd === 'q' ? x : 20) + num(), y2 = (xcmd === 'q' ? y :  =0) + num();
+          const x1 = (cmd === 'q' ? x : 0) + num(), y1 = (cmd === 'q' ? y : 0) + num();
+          const x2 = (cmd === 'q' ? x : 0) + num(), y2 = (cmd === 'q' ? y : 0) + num();
           const c1x = x + 2/3*(x1-x), c1y = y + 2/3*(y1-y);
- x2 + 2/3*(x1-x2), c2y = y2 + 2/3*(y1-y2);
+          const c2x = x2 + 2/3*(x1-x2), c2y = y2 + 2/3*(y1-y2);
           out.push(f(c1x)+' '+f(c1y)+' '+f(c2x)+' '+f(c2y)+' '+f(x2)+' '+f(y2)+' c');
           x = x2; y = y2;
         } else if (cmd === 'C' || cmd === 'c') {
@@ -786,6 +791,7 @@
       statusEl.textContent = 'PDF скачан';
     }
 
+    // ---------- ВКЛАДКИ ----------
     function showTab(which) {
       const tabs = ['anim', 'print', 'hsk1', 'hsk2', 'hsk3'];
       const panes = { anim: paneAnim, print: panePrint, hsk1: paneHsk1, hsk2: paneHsk2, hsk3: paneHsk3 };
@@ -808,8 +814,10 @@
     tabHsk2.addEventListener('click', () => showTab('hsk2'));
     tabHsk3.addEventListener('click', () => showTab('hsk3'));
 
+    // ---------- МЕНЮ ----------
     menuBtn.addEventListener('click', () => menu.classList.toggle('open'));
 
+    // ---------- СОБЫТИЯ ----------
     input.addEventListener('input', () => { scheduleGenerate(); setTimeout(syncHskFromInput, 100); });
     makeBtn.addEventListener('click', () => { generate(); saveCurrent(); });
     saveBtn.addEventListener('click', () => { saveCurrent(); statusEl.textContent = 'Сохранено локально'; });
@@ -866,17 +874,11 @@
       if (action === 'reset') { w.showCharacter(); statusEl.textContent = 'Показан знак «' + ch + '»'; }
     });
 
+    // ---------- СТАРТ ----------
     loadSaved();
     [1, 2, 3].forEach(renderHskGrid);
     generate();
     showTab('anim');
-
-    // ---------- SERVICE WORKER ----------
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-      });
-    }
   </script>
 </body>
 </html>
