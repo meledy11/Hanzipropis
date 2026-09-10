@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>HSK 1 · 2 · 3 — Словари с озвучкой</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Прописи HSK">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a3c5e">
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+    background: #eef2f7;
+    padding: 20px 16px;
+    color: #0f1f30;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* ===== ВКЛАДКИ ===== */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    background: white;
+    border-radius: 16px;
+    padding: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+    background: transparent;
+    color: #4a5f78;
+    letter-spacing: 0.3px;
+  }
+  .tab-btn:hover { background: #e8edf5; }
+  .tab-btn.active {
+    background: #1a3c5e;
+    color: white;
+    box-shadow: 0 4px 12px rgba(26,60,94,0.3);
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ===== СТРАНИЦА ===== */
+  .page {
+    background: white;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.07);
+    border-radius: 20px;
+    padding: 26px 22px 20px;
+    margin-bottom: 32px;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 3px solid #2c6b9e;
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .header h1 { font-size: 24px; font-weight: 700; color: #1a2d44; }
+  .header .block-tag {
+    font-size: 16px;
+    font-weight: 500;
+    color: #2c5a7a;
+    background: #e3ecf5;
+    padding: 6px 18px;
+    border-radius: 30px;
+  }
+  .vocab-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px 16px;
+  }
+  .card {
+    background: #fafcfe;
+    border-radius: 14px;
+    padding: 12px 14px 10px;
+    border: 1px solid #e3eaf2;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    page-break-inside: avoid;
+    position: relative;
+  }
+  .card .row1 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .card .emoji {
+    font-size: 24px;
+    line-height: 1;
+    min-width: 32px;
+    text-align: center;
+  }
+  .card .chinese {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f1f30;
+    cursor: pointer;
+  }
+  .card .chinese:hover { color: #2c6b9e; }
+  .card .pinyin {
+    font-size: 14px;
+    color: #7d5d3a;
+    background: #f0ece3;
+    padding: 0 8px;
+    border-radius: 30px;
+    font-weight: 500;
+  }
+  .card .russian {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a3c5e;
+    margin: 1px 0 0 0;
+  }
+  .card .example {
+    font-size: 12.5px;
+    color: #2f4a66;
+    background: #f2f6fb;
+    padding: 6px 10px;
+    border-radius: 10px;
+    margin-top: 3px;
+    line-height: 1.6;
+    border-left: 3px solid #7fa9c9;
+    cursor: pointer;
+  }
+  .card .example:hover { background: #e8eff8; }
+  .card .example .zh { font-weight: 600; color: #0d263b; }
+  .card .example .ru-ex {
+    color: #3d5e7a;
+    font-style: italic;
+    display: block;
+    margin-top: 1px;
+  }
+  .card .speaker-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    opacity: 0.4;
+    transition: 0.2s;
+    padding: 4px 6px;
+    border-radius: 30px;
+    line-height: 1;
+    margin-left: 4px;
+  }
+  .card .speaker-btn:hover { opacity: 1; background: #e3ecf5; }
+  .card .example .speaker-btn { font-size: 14px; margin-left: 6px; }
+  .footer-note {
+    text-align: center;
+    color: #5a6f86;
+    font-size: 13px;
+    margin-top: 16px;
+    border-top: 1px solid #dce4ed;
+    padding-top: 12px;
+    opacity: 0.7;
+  }
+
+  /* ===== ПОИСК ===== */
+  .search-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: rgba(238, 242, 247, 0.96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    padding: 12px 0 10px;
+    margin-bottom: 12px;
+  }
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #d8e1ec;
+    border-radius: 14px;
+    padding: 10px 14px;
+    box-shadow: 0 4px 14px rgba(26,60,94,0.06);
+  }
+  .search-box input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    font-size: 16px;
+    color: #0f1f30;
+    background: transparent;
+  }
+  .search-box input::placeholder { color: #8fa3bb; }
+  .search-box .icon {
+    font-size: 18px;
+    color: #4a5f78;
+    line-height: 1;
+  }
+  .search-box .clear-btn {
+    border: 0;
+    background: transparent;
+    color: #8fa3bb;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+    display: none;
+  }
+  .search-box.has-value .clear-btn { display: block; }
+  .search-count {
+    margin: 8px 4px 0;
+    font-size: 13px;
+    color: #5a6f86;
+  }
+  .search-count b { color: #1a3c5e; }
+
+  /* когда идёт поиск — скрываем вкладки HSK 1/2/3 и заголовки блоков */
+  body.searching .tabs { display: none; }
+  body.searching .page { display: none; }
+  body.searching #search-results { display: block; }
+  body.searching .footer-note { display: none; }
+  body.searching .search-title { display: block; }
+
+  #search-results { display: none; }
+  .search-title {
+    display: none;
+    font-size: 15px;
+    font-weight: 600;
+    color: #2c5a7a;
+    margin: 4px 4px 12px;
+  }
+
+  /* ===== ВОЗВРАТ К ПРОПИСЯМ ===== */
+  .back-to-worksheets {
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top));
+    left: 12px;
+    z-index: 100;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(26,60,94,0.96);
+    color: #fff;
+    font: 700 13px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    text-decoration: none;
+    box-shadow: 0 8px 20px rgba(26,60,94,0.35);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .back-to-worksheets:hover { background: #0f2740; }
+
+  /* ===== ОФЛАЙН ===== */
+  .offline-badge {
+    position: fixed;
+    right: 12px;
+    top: calc(12px + env(safe-area-inset-top));
+    z-index: 100;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #fff7df;
+    color: #91630f;
+    font: 700 11px/1.4 system-ui;
+    box-shadow: 0 4px 12px rgba(145,99,15,.18);
+    display: none;
+  }
+  body.offline .offline-badge { display: block; }
+
+  /* ===== АДАПТИВ ===== */
+  @media screen and (max-width: 780px) {
+    .vocab-grid { grid-template-columns: repeat(2, 1fr); }
+    .tab-btn { font-size: 15px; padding: 12px 14px; min-width: 80px; }
+  }
+  @media screen and (max-width: 480px) {
+    .vocab-grid { grid-template-columns: 1fr; }
+    .page { padding: 14px 10px; }
+    .tab-btn { font-size: 13px; padding: 10px 8px; min-width: 60px; }
+    .tabs { flex-wrap: wrap; }
+    .back-to-worksheets {
+      top: calc(8px + env(safe-area-inset-top));
+      left: 10px;
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+    .container { padding-top: 44px; }
+  }
+
+  /* ===== ПЕЧАТЬ ===== */
+  @media print {
+    body { background: white; padding: 0.1in 0.08in; }
+    .tabs, .search-wrap, .back-to-worksheets, .offline-badge { display: none; }
+    .tab-content { display: block !important; }
+    .tab-content:not(:first-child) { page-break-before: always; }
+    .page {
+      box-shadow: none;
+      border-radius: 0;
+      padding: 12px 10px;
+      margin: 0 auto 14px;
+      page-break-after: always;
+      max-width: 100%;
+      border: 1px solid #d0d8e0;
+    }
+    .page:last-child { page-break-after: avoid; }
+    .card { border: 1px solid #cbd5e2; background: #fafcff; padding: 8px 10px; }
+    .card .chinese { font-size: 18px; }
+    .card .pinyin { font-size: 12px; }
+    .card .russian { font-size: 13px; }
+    .card .example { font-size: 11.5px; padding: 5px 8px; }
+    .card .speaker-btn { display: none; }
+    .header h1 { font-size: 20px; }
+    .header .block-tag { font-size: 14px; }
+    .vocab-grid { gap: 8px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Кнопка возврата к прописям -->
+<a class="back-to-worksheets" href="index.html" title="Вернуться к прописям">← Прописи</a>
+
+<!-- Индикатор офлайна -->
+<div class="offline-badge" id="offlineBadge">Офлайн-режим</div>
+
+<div class="container">
+
+  <!-- ===== ПОИСК ===== -->
+  <div class="search-wrap">
+    <div class="search-box" id="searchBox">
+      <span class="icon">🔍</span>
+      <input id="searchInput" type="search"
+             placeholder="Поиск: иероглиф, пиньинь или перевод…"
+             autocomplete="off" spellcheck="false">
+      <button class="clear-btn" id="clearBtn" type="button" aria-label="Очистить">×</button>
+    </div>
+    <div class="search-count" id="searchCount"></div>
+  </div>
+
+  <!-- ===== ВКЛАДКИ ===== -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="hsk1">📘 HSK 1 · 300 слов</button>
+    <button class="tab-btn" data-tab="hsk2">📗 HSK 2 · 200 слов</button>
+    <button class="tab-btn" data-tab="hsk3">📙 HSK 3 · 500 слов</button>
+  </div>
+
+  <!-- ===== HSK 1 ===== -->
+  <div id="tab-hsk1" class="tab-content active">
+    <div class="page"><div class="header"><h1>📘 HSK 1 · Словарь</h1><span class="block-tag">Блок 1 · 1–50</span></div><div class="vocab-grid" id="hsk1-block1"></div><div class="footer-note">HSK 1 · 300 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📘 HSK 1 · Словарь</h1><span class="block-tag">Блок 2 · 51–100</span></div><div class="vocab-grid" id="hsk1-block2"></div><div class="footer-note">HSK 1 · 300 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📘 HSK 1 · Словарь</h1><span class="block-tag">Блок 3 · 101–150</span></div><div class="vocab-grid" id="hsk1-block3"></div><div class="footer-note">HSK 1 · 300 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📘 HSK 1 · Словарь</h1><span class="block-tag">Блок 4 · 151–200</span></div><div class="vocab-grid" id="hsk1-block4"></div><div class="footer-note">HSK 1 · 300 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📘 HSK 1 · Словарь</h1><span class="block-tag">Блок 5 · 201–250</span></div><div class="vocab-grid" id="hsk1-block5"></div><div class="footer-note">HSK 1 · 300 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📘 HSK 1 · Словарь</h1><span class="block-tag">Блок 6 · 251–300</span></div><div class="vocab-grid" id="hsk1-block6"></div><div class="footer-note">HSK 1 · 300 слов · для печати А4</div></div>
+  </div>
+
+  <!-- ===== HSK 2 ===== -->
+  <div id="tab-hsk2" class="tab-content">
+    <div class="page"><div class="header"><h1>📗 HSK 2 · Словарь</h1><span class="block-tag">Блок 1 · 1–50</span></div><div class="vocab-grid" id="hsk2-block1"></div><div class="footer-note">HSK 2 · 200 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📗 HSK 2 · Словарь</h1><span class="block-tag">Блок 2 · 51–100</span></div><div class="vocab-grid" id="hsk2-block2"></div><div class="footer-note">HSK 2 · 200 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📗 HSK 2 · Словарь</h1><span class="block-tag">Блок 3 · 101–150</span></div><div class="vocab-grid" id="hsk2-block3"></div><div class="footer-note">HSK 2 · 200 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📗 HSK 2 · Словарь</h1><span class="block-tag">Блок 4 · 151–200</span></div><div class="vocab-grid" id="hsk2-block4"></div><div class="footer-note">HSK 2 · 200 слов · для печати А4</div></div>
+  </div>
+
+  <!-- ===== HSK 3 ===== -->
+  <div id="tab-hsk3" class="tab-content">
+    <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 1 · 1–50</span></div><div class="vocab-grid" id="hsk3-block1"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 2 · 51–100</span></div><div class="vocab-grid" id="hsk3-block2"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 3 · 101–150</span></div><div class="vocab-grid" id="hsk3-block3"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 4 · 151–200</span></div><div class="vocab-grid" id="hsk3-block4"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 5 · 201–250</span></div><div class="vocab-grid" id="hsk3-block5"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 6 · 251–300</span></div><div class="vocab-grid" id="hsk3-block6"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 7 · 301–350</span></div><div class="vocab-grid" id="hsk3-block7"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 8 · 351–400</span></div><div class="vocab-grid" id="hsk3-block8"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 9 · 401–450</span></div><div class="vocab-grid" id="hsk3-block9"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 10 · 451–500</span></div><div class="vocab-grid" id="hsk3-block10"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
+  </div>
+
+  <!-- ===== РЕЗУЛЬТАТЫ ПОИСКА ===== -->
+  <div id="search-results" class="tab-content">
+    <div class="search-title" id="searchTitle"></div>
+    <div class="vocab-grid" id="searchGrid"></div>
+  </div>
+
+</div>
+
+<script src="dictionary-data.js"></script>
+<script>
+// ================================================================
+// ОЗВУЧКА
+// ================================================================
+function speakChinese(text) {
+  if (!window.speechSynthesis) { alert('Ваш браузер не поддерживает озвучку'); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN';
+  u.rate = 0.85;
+  u.pitch = 1;
+  u.volume = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const zhVoice = voices.find(v => v.lang.startsWith('zh'));
+  if (zhVoice) u.voice = zhVoice;
+  window.speechSynthesis.speak(u);
+}
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
+// ================================================================
+// ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК (и сброс поиска)
+// ================================================================
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    // сброс поиска
+    if (document.body.classList.contains('searching')) {
+      const input = document.getElementById('searchInput');
+      input.value = '';
+      document.getElementById('searchBox').classList.remove('has-value');
+      document.getElementById('searchCount').textContent = '';
+      document.body.classList.remove('searching');
+      sessionStorage.removeItem('dict-search');
+    }
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+    const target = document.getElementById('tab-' + this.dataset.tab);
+    if (target) target.classList.add('active');
+  });
+});
+
+// ================================================================
+// ДАННЫЕ
+// ================================================================
+const DICT = window.HSK_DICT || { hsk1: {}, hsk2: {}, hsk3: {} };
+const hsk1 = DICT.hsk1.words || [];
+const hsk2 = DICT.hsk2.words || [];
+const hsk3 = DICT.hsk3.words || [];
+const py1 = DICT.hsk1.pinyin || {};
+const py2 = DICT.hsk2.pinyin || {};
+const py3 = DICT.hsk3.pinyin || {};
+const ru1 = DICT.hsk1.ru || {};
+const ru2 = DICT.hsk2.ru || {};
+const ru3 = DICT.hsk3.ru || {};
+const emoji1 = DICT.hsk1.emoji || {};
+const emoji2 = DICT.hsk2.emoji || {};
+const emoji3 = DICT.hsk3.emoji || {};
+const ex1 = DICT.hsk1.example || {};
+const ex2 = DICT.hsk2.example || {};
+const ex3 = DICT.hsk3.example || {};
+
+// ================================================================
+// РЕНДЕР КАРТОЧЕК
+// ================================================================
+function renderCards(containerId, words, getPinyin, getRu, getEmoji, getExample) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const frag = document.createDocumentFragment();
+  for (const word of words) {
+    const pinyin = getPinyin(word) || '';
+    const ru = getRu(word) || '';
+    const emoji = getEmoji(word) || '📌';
+    const example = getExample(word) || '';
+    let exZh = '', ruEx = '';
+    if (example) {
+      const parts = example.split(' — ');
+      exZh = parts[0] || '';
+      ruEx = parts.slice(1).join(' — ') || '';
+    }
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="row1">
+        <span class="emoji">${emoji}</span>
+        <span class="chinese" data-say="${word}">${word}</span>
+        <span class="pinyin">${pinyin}</span>
+        <button class="speaker-btn" data-say="${word}" title="Озвучить слово">🔊</button>
+      </div>
+      <div class="russian">${ru}</div>
+      ${exZh ? `<div class="example" data-say="${exZh}">
+        <span class="zh">${exZh}</span>
+        <button class="speaker-btn" data-say="${exZh}" title="Озвучить предложение">🔊</button>
+        <span class="ru-ex">${ruEx}</span>
+      </div>` : ''}
+    `;
+    frag.appendChild(card);
+  }
+  container.innerHTML = '';
+  container.appendChild(frag);
+}
+
+// ================================================================
+// ЗАПУСК РЕНДЕРА HSK 1/2/3
+// ================================================================
+renderCards('hsk1-block1', hsk1.slice(0, 50), w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w]);
+renderCards('hsk1-block2', hsk1.slice(50, 100), w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w]);
+renderCards('hsk1-block3', hsk1.slice(100, 150), w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w]);
+renderCards('hsk1-block4', hsk1.slice(150, 200), w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w]);
+renderCards('hsk1-block5', hsk1.slice(200, 250), w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w]);
+renderCards('hsk1-block6', hsk1.slice(250, 300), w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w]);
+
+renderCards('hsk2-block1', hsk2.slice(0, 50), w => py2[w], w => ru2[w], w => emoji2[w], w => ex2[w]);
+renderCards('hsk2-block2', hsk2.slice(50, 100), w => py2[w], w => ru2[w], w => emoji2[w], w => ex2[w]);
+renderCards('hsk2-block3', hsk2.slice(100, 150), w => py2[w], w => ru2[w], w => emoji2[w], w => ex2[w]);
+renderCards('hsk2-block4', hsk2.slice(150, 200), w => py2[w], w => ru2[w], w => emoji2[w], w => ex2[w]);
+
+for (let i = 0; i < 10; i++) {
+  renderCards(`hsk3-block${i + 1}`, hsk3.slice(i * 50, i * 50 + 50), w => py3[w], w => ru3[w], w => emoji3[w], w => ex3[w]);
+}
+
+// ================================================================
+// ДЕЛЕГИРОВАНИЕ КЛИКОВ ПО КНОПКАМ ОЗВУЧКИ
+// ================================================================
+document.addEventListener('click', e => {
+  const sayEl = e.target.closest('[data-say]');
+  if (sayEl) {
+    e.stopPropagation();
+    speakChinese(sayEl.dataset.say);
+  }
+});
+
+// ================================================================
+// ПОИСК
+// ================================================================
+(function () {
+  const input = document.getElementById('searchInput');
+  const box = document.getElementById('searchBox');
+  const clearBtn = document.getElementById('clearBtn');
+  const countEl = document.getElementById('searchCount');
+  const resultsGrid = document.getElementById('searchGrid');
+  const resultsTitle = document.getElementById('searchTitle');
+
+  // Единый индекс
+  const INDEX = [
+    ...hsk1.map(w => ({ word: w, level: 1, py: py1[w] || '', ru: ru1[w] || '', emoji: emoji1[w] || '📌', ex: ex1[w] || '' })),
+    ...hsk2.map(w => ({ word: w, level: 2, py: py2[w] || '', ru: ru2[w] || '', emoji: emoji2[w] || '📌', ex: ex2[w] || '' })),
+    ...hsk3.map(w => ({ word: w, level: 3, py: py3[w] || '', ru: ru3[w] || '', emoji: emoji3[w] || '📌', ex: ex3[w] || '' }))
+  ];
+
+  const norm = (s) => String(s ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s，。；、！？：:“”"'‘’（）()【】\[\]…·/|+—–-]/g, '');
+
+  function searchAll(query) {
+    const q = norm(query);
+    const raw = query.trim();
+    const isCJK = /[\u3400-\u9fff]/.test(raw);
+    if (!q && !isCJK) return [];
+    const out = [];
+    for (const item of INDEX) {
+      let hit = false;
+      if (isCJK && item.word.includes(raw)) hit = true;
+      if (!hit && item.py && norm(item.py).includes(q)) hit = true;
+      if (!hit && item.ru && norm(item.ru).includes(q)) hit = true;
+      if (!hit && item.ex && norm(item.ex).includes(q)) hit = true;
+      if (hit) out.push(item);
+    }
+    return out;
+  }
+
+  function renderResultCard(item) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    let exZh = '', ruEx = '';
+    if (item.ex) {
+      const parts = item.ex.split(' — ');
+      exZh = parts[0] || '';
+      ruEx = parts.slice(1).join(' — ') || '';
+    }
+    card.innerHTML = `
+      <div class="row1">
+        <span class="emoji">${item.emoji}</span>
+        <span class="chinese" data-say="${item.word}">${item.word}</span>
+        <span class="pinyin">${item.py}</span>
+        <button class="speaker-btn" data-say="${item.word}" title="Озвучить слово">🔊</button>
+        <span style="font-size:11px;color:#8fa3bb;margin-left:auto;background:#eef2f7;padding:2px 8px;border-radius:10px;font-weight:600">HSK ${item.level}</span>
+      </div>
+      <div class="russian">${item.ru}</div>
+      ${exZh ? `<div class="example" data-say="${exZh}">
+        <span class="zh">${exZh}</span>
+        <button class="speaker-btn" data-say="${exZh}" title="Озвучить предложение">🔊</button>
+        <span class="ru-ex">${ruEx}</span>
+      </div>` : ''}
+    `;
+    return card;
+  }
+
+  function runSearch() {
+    const q = input.value.trim();
+
+    if (!q) {
+      document.body.classList.remove('searching');
+      box.classList.remove('has-value');
+      countEl.textContent = '';
+      resultsGrid.innerHTML = '';
+      sessionStorage.removeItem('dict-search');
+      return;
+    }
+
+    box.classList.add('has-value');
+    document.body.classList.add('searching');
+
+    const items = searchAll(q);
+    resultsTitle.textContent = `Результаты поиска: ${items.length}`;
+
+    const byLevel = { 1: [], 2: [], 3: [] };
+    items.forEach(it => byLevel[it.level].push(it));
+
+    countEl.innerHTML = items.length
+      ? `<b>${items.length}</b> найдено — HSK 1: ${byLevel[1].length}, HSK 2: ${byLevel[2].length}, HSK 3: ${byLevel[3].length}`
+      : `Ничего не найдено`;
+
+    resultsGrid.innerHTML = '';
+    if (!items.length) {
+      resultsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 12px;color:#8fa3bb">Попробуйте другой запрос — например, «吃», «chi» или «есть».</div>';
+    } else {
+      const frag = document.createDocumentFragment();
+      [...byLevel[1], ...byLevel[2], ...byLevel[3]].forEach(it => frag.appendChild(renderResultCard(it)));
+      resultsGrid.appendChild(frag);
+    }
+
+    sessionStorage.setItem('dict-search', input.value);
+  }
+
+  let timer = 0;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(runSearch, 180);
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      input.value = '';
+      runSearch();
+      input.blur();
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    runSearch();
+    input.focus();
+  });
+
+  // Быстрый фокус по "/"
+  document.addEventListener('keydown', e => {
+    if (e.key === '/' && document.activeElement !== input) {
+      e.preventDefault();
+      input.focus();
+      input.select();
+    }
+  });
+
+  // Восстановление поиска при возврате
+  const savedQ = sessionStorage.getItem('dict-search') || '';
+  if (savedQ) {
+    input.value = savedQ;
+    runSearch();
+  }
+})();
+
+// ================================================================
+// ОФЛАЙН + SW
+// ================================================================
+(function () {
+  const updateOnline = () => document.body.classList.toggle('offline', !navigator.onLine);
+  window.addEventListener('online', updateOnline);
+  window.addEventListener('offline', updateOnline);
+  updateOnline();
+})();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(err =>
+      console.warn('SW не зарегистрирован:', err)
+    );
+  });
+}
+
+// Alt+G — на прописи
+document.addEventListener('keydown', e => {
+  if (e.altKey && (e.key === 'g' || e.key === 'G' || e.key === 'п' || e.key === 'П')) {
+    location.href = 'index.html';
+  }
+});
+</script>
+</body>
+</html>
