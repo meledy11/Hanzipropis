@@ -1,47 +1,44 @@
 {
-  "name": "Прописи иероглифов · HSK 1-3 + Грамматика",
-  "short_name": "Прописи",
+  "name": "Прописи иероглифов · HSK 1-3 + Грамматика HSK 2-6",
+  "short_name": "HSK Прописи",
   "description": "Анимация черт, прописи HSK 1-3 и грамматика HSK 2-6. Работает офлайн.",
-  "lang": "ru",
-  "dir": "ltr",
   "start_url": "./index.html",
   "scope": "./",
-  "id": "/hanzi-worksheets/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
   "background_color": "#f2f4f8",
   "theme_color": "#2563eb",
-  "categories": ["education", "productivity"],
+  "lang": "ru",
   "icons": [
     {
-      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='112' fill='%232563eb'/><text x='256' y='360' font-size='320' text-anchor='middle' font-family='Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif'>📚</text></svg>",
-      "sizes": "512x512",
+      "src": "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%232563eb'/%3E%3Ctext x='256' y='372' font-family='serif' font-size='340' font-weight='700' text-anchor='middle' fill='%23ffffff'%3E%E5%AD%97%3C/text%3E%3C/svg%3E",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%232563eb'/><text x='256' y='380' font-size='360' text-anchor='middle' font-family='Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif'>📚</text></svg>",
-      "sizes": "512x512",
+      "src": "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%232563eb'/%3E%3Ctext x='256' y='386' font-family='Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif' font-size='330' text-anchor='middle'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E",
+      "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "maskable"
+      "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='112' fill='%230abab5'/><text x='256' y='360' font-size='320' text-anchor='middle' font-family='Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif'>语</text></svg>",
-      "sizes": "512x512",
+      "src": "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%232563eb'/%3E%3Ctext x='256' y='386' font-family='Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif' font-size='330' text-anchor='middle'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E",
+      "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "monochrome"
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
     {
       "name": "Прописи",
       "short_name": "Прописи",
+      "description": "Анимация черт и прописи HSK 1-3",
       "url": "./index.html",
       "icons": [
         {
-          "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='112' fill='%232563eb'/><text x='256' y='360' font-size='300' text-anchor='middle' font-family='Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif'>✍️</text></svg>",
-          "sizes": "512x512",
+          "src": "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%232563eb'/%3E%3Ctext x='256' y='372' font-family='serif' font-size='340' font-weight='700' text-anchor='middle' fill='%23ffffff'%3E%E5%AD%97%3C/text%3E%3C/svg%3E",
+          "sizes": "any",
           "type": "image/svg+xml"
         }
       ]
@@ -49,11 +46,12 @@
     {
       "name": "Грамматика HSK 2-6",
       "short_name": "Грамматика",
+      "description": "Библиотека грамматики, упражнения и план HSK 3.0",
       "url": "./grammar.html",
       "icons": [
         {
-          "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='112' fill='%230abab5'/><text x='256' y='360' font-size='300' text-anchor='middle' font-family='Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif'>📖</text></svg>",
-          "sizes": "512x512",
+          "src": "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%230abab5'/%3E%3Ctext x='256' y='386' font-family='Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif' font-size='330' text-anchor='middle'%3E%F0%9F%93%96%3C/text%3E%3C/svg%3E",
+          "sizes": "any",
           "type": "image/svg+xml"
         }
       ]
