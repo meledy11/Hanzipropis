@@ -1,105 +1,84 @@
-// ============================================================
-// Service worker: офлайн-кэш для прописей + грамматики.
-// Иконки в манифесте — эмодзи, файлов-картинок нет.
-// ============================================================
+/* Service Worker: одно приложение — прописи + грамматика */
 
-const CACHE = 'hanzi-app-v1';
-const OFFLINE_URL = './index.html';
+const CACHE = 'hanzi-hsk13-v4';
 
-// Файлы, которые кэшируем при установке
-const CORE_ASSETS = [
+const ASSETS = [
   './',
   './index.html',
   './grammar.html',
   './hsk-data.js',
-  './manifest.webmanifest',
+  './manifest.json',
+  './icon-boot.js',
   'https://cdn.jsdelivr.net/npm/hanzi-writer@3.7/dist/hanzi-writer.min.js',
   'https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js'
 ];
 
-// --- Установка: тянем всё сразу ---
-self.addEventListener('install', event => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
-    await Promise.all(
-      CORE_ASSETS.map(url =>
-        cache.add(new Request(url, { cache: 'reload' }))
-          .catch(err => console.warn('[sw] не удалось закэшировать', url, err))
-      )
-    );
-    await self.skipWaiting();
-  })());
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE)
+      .then((c) => Promise.all(
+        ASSETS.map(url => c.add(url).catch(err => console.warn('[sw] skip', url, err)))
+      ))
+      .then(() => self.skipWaiting())
+  );
 });
 
-// --- Активация: чистим старые кэши ---
-self.addEventListener('activate', event => {
-  event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
-    if (self.registration.navigationPreload) {
-      try { await self.registration.navigationPreload.disable(); } catch (e) {}
-    }
-    await self.clients.claim();
-  })());
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
+  );
 });
 
-// --- Сообщения от страниц ---
-self.addEventListener('message', event => {
-  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
-  if (event.data?.type === 'CLEAR_CACHE') {
-    caches.delete(CACHE).then(() => self.clients.matchAll()).then(clients =>
-      clients.forEach(c => c.postMessage({ type: 'CACHE_CLEARED' }))
-    );
-  }
+self.addEventListener('message', (e) => {
+  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-// --- Перехват запросов ---
-self.addEventListener('fetch', event => {
-  const req = event.request;
-  if (req.method !== 'GET') return;
+self.addEventListener('fetch', (e) => {
+  if (e.request.method !== 'GET') return;
 
-  const url = new URL(req.url);
-  const isSameOrigin = url.origin === self.location.origin;
-  const isCdn = url.hostname.endsWith('jsdelivr.net');
-
-  // Навигация: сеть → кэш → офлайн-страница
-  if (req.mode === 'navigate') {
-    event.respondWith((async () => {
+  if (e.request.mode === 'navigate') {
+    e.respondWith((async () => {
       try {
-        const fresh = await fetch(req);
+        const fresh = await fetch(e.request);
         const clone = fresh.clone();
-        caches.open(CACHE).then(c => c.put(req, clone)).catch(() => {});
+        caches.open(CACHE).then((c) => c.put(e.request, clone)).catch(() => {});
         return fresh;
       } catch {
-        const cached = await caches.match(req);
-        if (cached) return cached;
-        const fallback = await caches.match(OFFLINE_URL);
-        return fallback || new Response('Офлайн', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+        const cached = await caches.match(e.request);
+        return cached || caches.match('./index.html');
       }
     })());
     return;
   }
 
-  if (!isSameOrigin && !isCdn) return;
-
-  // Остальное: сначала кэш, в фоне — обновление
-  event.respondWith((async () => {
-    const cached = await caches.match(req);
+  e.respondWith((async () => {
+    const cached = await caches.match(e.request);
     if (cached) {
-      fetch(req)
-        .then(res => { if (res && res.ok) caches.open(CACHE).then(c => c.put(req, res.clone())); })
-        .catch(() => {});
+      fetch(e.request).then((res) => {
+        if (res && res.status === 200 && res.type !== 'opaque') {
+          const u = new URL(e.request.url);
+          if (u.origin === location.origin || u.hostname.includes('jsdelivr.net')) {
+            caches.open(CACHE).then((c) => c.put(e.request, res.clone())).catch(() => {});
+          }
+        }
+      }).catch(() => {});
       return cached;
     }
     try {
-      const res = await fetch(req);
-      if (res && res.ok) {
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(req, clone)).catch(() => {});
+      const res = await fetch(e.request);
+      if (res && res.status === 200 && res.type !== 'opaque') {
+        const u = new URL(e.request.url);
+        if (u.origin === location.origin || u.hostname.includes('jsdelivr.net')) {
+          caches.open(CACHE).then((c) => c.put(e.request, res.clone())).catch(() => {});
+        }
       }
       return res;
     } catch {
-      return caches.match(OFFLINE_URL) || new Response('Офлайн', { status: 503 });
+      return new Response('', { status: 503, statusText: 'Offline' });
     }
   })());
 });
