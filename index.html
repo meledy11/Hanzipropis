@@ -1,0 +1,1092 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#ffffff">
+  <title>Прописи иероглифов</title>
+  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.7/dist/hanzi-writer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js"></script>
+  <style>
+    :root {
+      --ink: #1a1f2b;
+      --muted: #6b7280;
+      --line: #e2e6ee;
+      --line-strong: #cbd2dd;
+      --grid: #d9e0ea;
+      --blue: #2563eb;
+      --blue-soft: #eff4ff;
+      --red: #d92d20;
+      --paper: #ffffff;
+      --bg: #f2f4f8;
+      --tap: 46px;
+      --radius: 14px;
+      --stroke-cell: 6.35mm;
+      --practice-cell: 11.64mm;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: -apple-system, "SF Pro Text", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      padding-bottom: calc(64px + env(safe-area-inset-bottom));
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+
+    /* ---------- ВЕРХНЯЯ ПАНЕЛЬ ---------- */
+    .bar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(255,255,255,0.94);
+      -webkit-backdrop-filter: saturate(180%) blur(14px);
+      backdrop-filter: saturate(180%) blur(14px);
+      border-bottom: 1px solid var(--line);
+      padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+    }
+
+    .bar-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .brand {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    .menu-btn {
+      width: 40px;
+      height: 40px;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      font-size: 20px;
+      line-height: 1;
+      padding: 0;
+      color: var(--ink);
+    }
+
+    .input-wrap {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 52px;
+      max-height: 140px;
+      resize: none;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1.4;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.14);
+    }
+
+    .create-btn {
+      min-height: 52px;
+      min-width: 84px;
+      border: none;
+      border-radius: 12px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 0 14px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .create-btn:active { background: #1d4ed8; }
+
+    /* ---------- МЕНЮ ---------- */
+    .menu {
+      display: none;
+      margin-top: 10px;
+      padding: 6px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(15,23,42,0.08);
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+    .menu.open { display: grid; }
+
+    .menu button {
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+    }
+    .menu button:active { background: #eef2f7; }
+
+    /* ---------- ВКЛАДКИ ---------- */
+    .tabs {
+      position: sticky;
+      top: calc(env(safe-area-inset-top) + 108px);
+      z-index: 25;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      margin: 10px 12px 0;
+      padding: 4px;
+      background: #e6eaf1;
+      border-radius: 12px;
+    }
+
+    .tab {
+      min-height: 40px;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .tab.active {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 1px 3px rgba(15,23,42,0.08);
+    }
+
+    /* ---------- СОДЕРЖИМОЕ ---------- */
+    .pane { display: none; padding: 14px 12px 20px; }
+    .pane.active { display: block; }
+
+    .empty-note {
+      text-align: center;
+      color: var(--muted);
+      padding: 60px 20px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ---------- КАРТОЧКА ---------- */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .char-badge {
+      display: grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      background: var(--blue-soft);
+      color: var(--blue);
+      font-family: "KaiTi", "STKaiti", serif;
+      font-size: 34px;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    .char-meta { flex: 1; min-width: 0; }
+    .pinyin { color: var(--red); font-size: 20px; font-weight: 800; line-height: 1.1; }
+    .meta { margin-top: 3px; color: var(--muted); font-size: 12px; }
+
+    .switch {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    .switch input { display: none; }
+    .switch .track {
+      width: 44px;
+      height: 26px;
+      border-radius: 13px;
+      background: #d3d8e2;
+      position: relative;
+      transition: background .18s;
+      flex: 0 0 auto;
+    }
+    .switch .track::after {
+      content: "";
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      transition: transform .18s;
+    }
+    .switch input:checked + .track { background: var(--blue); }
+    .switch input:checked + .track::after { transform: translateX(18px); }
+
+    .card-body { padding: 14px; }
+
+    .writer-wrap { display: grid; place-items: center; margin-bottom: 12px; }
+
+    .writer-box {
+      width: 200px;
+      height: 200px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      background-image:
+        linear-gradient(45deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%),
+        linear-gradient(-45deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%),
+        linear-gradient(90deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%),
+        linear-gradient(0deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%);
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .actions button {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+      padding: 0 4px;
+      touch-action: manipulation;
+    }
+    .actions button:active { background: #eef2f7; }
+
+    .actions button.primary-action {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .actions button.primary-action:active { background: #1d4ed8; }
+
+    /* раскрывающийся список черт */
+    .details-toggle {
+      width: 100%;
+      min-height: 38px;
+      border: none;
+      background: transparent;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      padding: 0;
+    }
+
+    .mini-steps {
+      display: none;
+      grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .mini-steps.open { display: grid; }
+
+    .grid-cell {
+      position: relative;
+      border: 1.4px solid #7f8794;
+      background: #fff;
+      background-image:
+        linear-gradient(45deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%),
+        linear-gradient(-45deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%),
+        linear-gradient(90deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%),
+        linear-gradient(0deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%);
+      overflow: hidden;
+    }
+    .mini-steps .grid-cell { aspect-ratio: 1; }
+    .grid-cell svg { display: block; width: 100%; height: 100%; }
+
+    /* ---------- ПРОПИСИ ---------- */
+    .print-actions {
+      display: flex;
+      gap: 8px;
+      max-width: 1180px;
+      margin: 0 auto 12px;
+      flex-wrap: wrap;
+    }
+
+    .print-actions button {
+      flex: 1;
+      min-width: 140px;
+      min-height: 46px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .print-actions button.primary-action {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .print-actions button:active { opacity: .9; }
+
+    .page-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 4px 0 10px;
+    }
+
+    .page {
+      width: 297mm;
+      min-height: 210mm;
+      margin: 0 auto 14px;
+      padding: 7mm 8mm;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 6px 20px rgba(15,23,42,0.10);
+    }
+
+    .page-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 2.8mm;
+      margin-bottom: 2.2mm;
+      border-bottom: 0.35mm solid #111827;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .page-title span { color: var(--muted); font-size: 9px; font-weight: 400; }
+
+    .worksheet-row {
+      display: grid;
+      grid-template-columns: 16mm 1fr;
+      gap: 2.5mm;
+      min-height: 18mm;
+      padding: 0.45mm 0;
+      border-bottom: 0.2mm solid #edf1f7;
+    }
+
+    .left-info {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      justify-items: center;
+      align-items: center;
+      gap: 1.2mm;
+    }
+    .print-pinyin { color: var(--red); font-size: 10px; font-weight: 700; line-height: 1; }
+    .big-char-cell { width: 11mm; height: 11mm; }
+
+    .right-lines { display: grid; grid-template-rows: auto auto; gap: 0.45mm; min-width: 0; }
+
+    .line {
+      display: grid;
+      grid-template-columns: 13mm 1fr;
+      align-items: center;
+      gap: 1.8mm;
+      min-width: 0;
+    }
+    .line-label { color: #a7334a; font-size: 9px; font-weight: 700; white-space: nowrap; }
+
+    .stroke-strip, .practice-strip {
+      display: flex; align-items: center; gap: 1.05mm; min-width: 0; overflow: hidden;
+    }
+    .stroke-strip .grid-cell { width: var(--stroke-cell); height: var(--stroke-cell); flex: 0 0 auto; }
+    .practice-strip .grid-cell { width: var(--practice-cell); height: var(--practice-cell); flex: 0 0 auto; }
+
+    .empty-page {
+      display: grid;
+      place-items: center;
+      min-height: 95mm;
+      color: var(--muted);
+      border: 0.3mm dashed #b8c0ce;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+
+    .error-box {
+      padding: 14px;
+      color: #9f1239;
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-radius: 10px;
+      line-height: 1.6;
+      font-size: 13px;
+    }
+
+    /* ---------- СТАТУС ---------- */
+    .status-bar {
+      position: fixed;
+      left: env(safe-area-inset-left);
+      right: env(safe-area-inset-right);
+      bottom: 0;
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(255,255,255,0.96);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      z-index: 28;
+    }
+
+    @media (min-width: 720px) {
+      .cards { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+      .writer-box { width: 176px; height: 176px; }
+      .tabs { max-width: 420px; margin-left: auto; margin-right: auto; }
+      .pane { padding: 18px; }
+    }
+
+    @page { size: A4 landscape; margin: 7mm; }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .bar, .tabs, .pane#pane-anim, .status-bar, .print-actions, .section-title { display: none !important; }
+      .pane { display: block !important; padding: 0 !important; }
+      .page-scroll { overflow: visible; padding: 0; }
+      .page {
+        width: auto; min-height: auto; margin: 0; padding: 0;
+        box-shadow: none; border-radius: 0; break-after: page;
+      }
+      .page:last-child { break-after: auto; }
+      .worksheet-row { min-height: 18mm; padding: 1mm 0; }
+      .page-title { margin-bottom: 2mm; }
+    }
+  </style>
+</head>
+<body>
+  <header class="bar">
+    <div class="bar-top">
+      <div class="brand">Прописи иероглифов</div>
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Меню">⋯</button>
+    </div>
+    <div class="input-wrap">
+      <textarea id="input" placeholder="Вставьте иероглифы: 而 实 候 班 哈 举" autofocus></textarea>
+      <button class="create-btn" id="makeBtn" type="button">Создать</button>
+    </div>
+    <div class="menu" id="menu">
+      <button id="saveBtn" type="button">Сохранить</button>
+      <button id="saveFileBtn" type="button">В Файлы</button>
+      <button id="importBtn" type="button">Импорт</button>
+      <button id="downloadPrintBtn" type="button">HTML для печати</button>
+    </div>
+    <input id="importFile" type="file" accept="application/json,.json" hidden>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" id="tabAnim" type="button">Анимация</button>
+    <button class="tab" id="tabPrint" type="button">Прописи</button>
+  </nav>
+
+  <section class="pane active" id="pane-anim">
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section class="pane" id="pane-print">
+    <div class="print-actions">
+      <button class="primary-action" id="pdfBtn" type="button">Скачать PDF</button>
+      <button id="clearBtn" type="button">Очистить всё</button>
+    </div>
+    <div class="page-scroll" id="printPreview">
+      <section class="page">
+        <div class="page-title">Прописи по чертам <span>создаётся автоматически</span></div>
+        <div class="empty-page">Введите иероглифы</div>
+      </section>
+    </div>
+  </section>
+
+  <div class="status-bar" id="status">Ожидание ввода</div>
+
+  <script>
+    const input = document.getElementById('input');
+    const makeBtn = document.getElementById('makeBtn');
+    const menuBtn = document.getElementById('menuBtn');
+    const menu = document.getElementById('menu');
+    const saveBtn = document.getElementById('saveBtn');
+    const saveFileBtn = document.getElementById('saveFileBtn');
+    const importBtn = document.getElementById('importBtn');
+    const importFile = document.getElementById('importFile');
+    const downloadPrintBtn = document.getElementById('downloadPrintBtn');
+    const pdfBtn = document.getElementById('pdfBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const cards = document.getElementById('cards');
+    const printPreview = document.getElementById('printPreview');
+    const statusEl = document.getElementById('status');
+    const tabAnim = document.getElementById('tabAnim');
+    const tabPrint = document.getElementById('tabPrint');
+    const paneAnim = document.getElementById('pane-anim');
+    const panePrint = document.getElementById('pane-print');
+
+    const dataCache = new Map();
+    const writers = new Map();
+    const STORAGE_KEY = 'hanziWorksheetCombined.ru.v2';
+    let selectedMap = {};
+
+    input.value = '而实候班哈举';
+
+    /* ---------- УТИЛИТЫ ---------- */
+    function orderedChineseChars(text) {
+      return [...text].filter(ch => /\p{Script=Han}/u.test(ch));
+    }
+    function uniqueChars(chars) { return [...new Set(chars)]; }
+    function esc(v) {
+      return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function getPinyin(char) {
+      try {
+        if (window.pinyinPro?.pinyin) return window.pinyinPro.pinyin(char, { toneType: 'symbol' });
+      } catch (e) {}
+      return '';
+    }
+    async function loadData(char) {
+      if (dataCache.has(char)) return dataCache.get(char);
+      const data = await HanziWriter.loadCharacterData(char);
+      dataCache.set(char, data);
+      return data;
+    }
+    function speakChar(char) {
+      if (!('speechSynthesis' in window)) { statusEl.textContent = 'Синтез речи недоступен'; return; }
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(char);
+      u.lang = 'zh-CN'; u.rate = 0.75;
+      speechSynthesis.speak(u);
+    }
+
+    /* ---------- ОТРИСОВКА SVG ---------- */
+    function strokeSvg(strokes, active, mode) {
+      const paths = strokes.map((d, i) => {
+        let fill = '#e5e7eb';
+        if (mode === 'full') fill = '#111827';
+        else if (mode === 'ghost') fill = 'rgba(201,115,34,0.12)';
+        else if (i < active) fill = '#9aa1ad';
+        else if (i === active) fill = '#d92d20';
+        return '<path d="' + esc(d) + '" fill="' + fill + '"></path>';
+      }).join('');
+      return '<svg viewBox="0 0 1024 1024" aria-hidden="true"><g transform="translate(0, 900) scale(1, -1)">' + paths + '</g></svg>';
+    }
+    function stepsHtml(strokes) {
+      return strokes.map((_, i) => '<div class="grid-cell">' + strokeSvg(strokes, i, 'step') + '</div>').join('');
+    }
+    function practiceHtml(strokes) {
+      let cells = '';
+      for (let i = 0; i < 10; i++) {
+        cells += '<div class="grid-cell">' + (i < 4 ? strokeSvg(strokes, 0, 'ghost') : '') + '</div>';
+      }
+      return cells;
+    }
+
+    /* ---------- ШАБЛОН КАРТОЧКИ ---------- */
+    function cardHtml(item) {
+      const on = selectedMap[item.char] !== false;
+      const checkedAttr = on ? ' checked' : '';
+      if (item.error) {
+        return '<article class="card"><div class="card-top"><div class="char-badge">' + esc(item.char) + '</div><div class="char-meta"><div class="pinyin">' + esc(item.pinyin) + '</div><div class="meta">данные недоступны</div></div><label class="switch"><input type="checkbox" data-select-char="' + esc(item.char) + '"' + checkedAttr + '><span class="track"></span></label></div><div class="card-body"><div class="error-box">Не удалось загрузить черты. Проверьте интернет.</div></div></article>';
+      }
+      const code = item.char.codePointAt(0);
+      return '<article class="card">' +
+        '<div class="card-top">' +
+          '<div class="char-badge">' + esc(item.char) + '</div>' +
+          '<div class="char-meta"><div class="pinyin">' + esc(item.pinyin) + '</div><div class="meta">черт: ' + item.strokes.length + '</div></div>' +
+          '<label class="switch"><input type="checkbox" data-select-char="' + esc(item.char) + '"' + checkedAttr + '><span class="track"></span></label>' +
+        '</div>' +
+        '<div class="card-body">' +
+          '<div class="writer-wrap"><div id="writer-' + code + '" class="writer-box"></div></div>' +
+          '<div class="actions">' +
+            '<button type="button" data-action="speak" data-char="' + esc(item.char) + '">Звук</button>' +
+            '<button type="button" data-action="animate" data-char="' + esc(item.char) + '">Анимация</button>' +
+            '<button type="button" data-action="quiz" data-char="' + esc(item.char) + '" class="primary-action">Практика</button>' +
+            '<button type="button" data-action="reset" data-char="' + esc(item.char) + '">Сброс</button>' +
+          '</div>' +
+          '<button type="button" class="details-toggle" data-action="details">Показать все черты ▾</button>' +
+          '<div class="mini-steps" id="steps-' + code + '">' + stepsHtml(item.strokes) + '</div>' +
+        '</div>' +
+      '</article>';
+    }
+
+    /* ---------- ШАБЛОН СТРОКИ ПРОПИСИ ---------- */
+    function worksheetRow(item) {
+      if (item.error) {
+        return '<div class="worksheet-row"><div class="left-info"><div class="print-pinyin">' + esc(item.pinyin) + '</div><div class="grid-cell big-char-cell"></div></div><div class="error-box">' + esc(item.char) + ' — черты не загружены</div></div>';
+      }
+      return '<div class="worksheet-row">' +
+        '<div class="left-info"><div class="print-pinyin">' + esc(item.pinyin) + '</div><div class="grid-cell big-char-cell">' + strokeSvg(item.strokes, 0, 'full') + '</div></div>' +
+        '<div class="right-lines">' +
+          '<div class="line"><div class="line-label">Черты</div><div class="stroke-strip">' + stepsHtml(item.strokes) + '</div></div>' +
+          '<div class="line"><div class="line-label">Пропись</div><div class="practice-strip">' + practiceHtml(item.strokes) + '</div></div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function tuneSizes() {
+      document.documentElement.style.setProperty('--stroke-cell', '6.35mm');
+      document.documentElement.style.setProperty('--practice-cell', '11.64mm');
+      return 6.35;
+    }
+
+    /* ---------- СОЗДАНИЕ ПЛЕЕРА (надёжно) ---------- */
+    function createWriter(item, attempt = 0) {
+      if (item.error) return;
+      if (writers.has(item.char)) return;
+
+      const id = 'writer-' + item.char.codePointAt(0);
+      const el = document.getElementById(id);
+      if (!el) {
+        if (attempt < 12) requestAnimationFrame(() => createWriter(item, attempt + 1));
+        else console.warn('Контейнер плеера не найден:', item.char);
+        return;
+      }
+      try {
+        const w = HanziWriter.create(id, item.char, {
+          width: 200, height: 200, padding: 8,
+          showOutline: true,
+          strokeAnimationSpeed: 1,
+          delayBetweenStrokes: 120,
+          radicalColor: '#16835f',
+          drawingColor: '#2563eb',
+          strokeColor: '#1a1f2b',
+          outlineColor: '#cfd6e3',
+          drawingWidth: 24,
+          showHintAfterMisses: 3,
+          highlightOnComplete: true,
+          highlightColor: '#2563eb'
+        });
+        writers.set(item.char, w);
+        w.animateCharacter();
+      } catch (err) {
+        console.warn('Ошибка создания плеера', item.char, err);
+      }
+    }
+
+    /* ---------- ХРАНИЛИЩЕ ---------- */
+    function currentState() {
+      return { input: input.value, selectedMap, savedAt: new Date().toISOString() };
+    }
+    function saveCurrent() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState())); } catch (e) {}
+    }
+    function loadSaved() {
+      try {
+        const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        if (!s) return;
+        if (typeof s.input === 'string') input.value = s.input;
+        if (s.selectedMap && typeof s.selectedMap === 'object') selectedMap = s.selectedMap;
+      } catch (e) {}
+    }
+
+    /* ---------- ГЕНЕРАЦИЯ ---------- */
+    function selectedItemsForPrint(all) {
+      return all.filter(it => selectedMap[it.char] !== false);
+    }
+
+    function renderCards(animationItems) {
+      if (!animationItems.length) {
+        cards.innerHTML = '<div class="empty-note">Введите иероглифы в поле выше,<br>чтобы увидеть анимацию черт.</div>';
+        return;
+      }
+      cards.innerHTML = animationItems.map(cardHtml).join('');
+      animationItems.forEach(it => createWriter(it));
+    }
+
+    function renderPrint(all) {
+      const items = selectedItemsForPrint(all);
+      if (!items.length) {
+        printPreview.innerHTML = '<section class="page"><div class="page-title">Прописи по чертам <span>ничего не отмечено</span></div><div class="empty-page">Включите переключатель «В печать» на карточках</div></section>';
+        return { pages: 0, count: 0, cell: 0 };
+      }
+      const cell = tuneSizes();
+      const per = 10, pages = [];
+      for (let i = 0; i < items.length; i += per) {
+        const n = pages.length + 1;
+        const slice = items.slice(i, i + per);
+        pages.push('<section class="page"><div class="page-title">Прописи по чертам <span>стр. ' + n + ' из ' + Math.ceil(items.length / per) + '</span></div>' + slice.map(worksheetRow).join('') + '</section>');
+      }
+      printPreview.innerHTML = pages.join('');
+      return { pages: pages.length, count: items.length, cell };
+    }
+
+    async function generate() {
+      if (!window.HanziWriter) {
+        statusEl.textContent = 'Библиотека черт не загрузилась';
+        return;
+      }
+      const chars = orderedChineseChars(input.value);
+      writers.clear();
+
+      if (!chars.length) {
+        renderCards([]);
+        printPreview.innerHTML = '<section class="page"><div class="page-title">Прописи по чертам <span>создаётся автоматически</span></div><div class="empty-page">Введите иероглифы</div></section>';
+        statusEl.textContent = 'Ожидание ввода';
+        return;
+      }
+
+      statusEl.textContent = 'Генерация 0 / ' + chars.length;
+      const all = [];
+      for (let i = 0; i < chars.length; i++) {
+        const ch = chars[i];
+        statusEl.textContent = 'Генерация ' + (i + 1) + ' / ' + chars.length;
+        const py = getPinyin(ch);
+        try {
+          const d = await loadData(ch);
+          all.push({ char: ch, pinyin: py, strokes: d.strokes || [] });
+        } catch (e) {
+          all.push({ char: ch, pinyin: py, error: true });
+        }
+      }
+
+      const animItems = uniqueChars(chars).map(c => all.find(it => it.char === c));
+      renderCards(animItems);
+      const info = renderPrint(all);
+      window.__lastItems = all;
+
+      statusEl.textContent = 'Готово: ' + chars.length + ' знаков, в печать ' + info.count + ', страниц ' + info.pages;
+      if (writers.size === 0 && animItems.some(i => !i.error)) {
+        statusEl.textContent += ' · плееры создаются…';
+      }
+    }
+
+    let timer = 0;
+    function scheduleGenerate() {
+      clearTimeout(timer);
+      timer = setTimeout(() => { generate(); saveCurrent(); }, 420);
+    }
+
+    /* ---------- ЭКСПОРТ ---------- */
+    function downloadBlob(name, text, type) {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 800);
+    }
+
+    async function saveStateToComputer() {
+      const text = JSON.stringify(currentState(), null, 2);
+      const name = 'прописи_' + new Date().toISOString().slice(0,10) + '.json';
+      try {
+        if (window.showSaveFilePicker) {
+          const h = await window.showSaveFilePicker({
+            suggestedName: name,
+            types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+          });
+          const w = await h.createWritable();
+          await w.write(text); await w.close();
+          statusEl.textContent = 'Сохранено в Файлы';
+          return;
+        }
+      } catch (e) { if (e?.name === 'AbortError') return; }
+      downloadBlob(name, text, 'application/json;charset=utf-8');
+      statusEl.textContent = 'Файл скачан';
+    }
+
+    function importStateFromText(text) {
+      const s = JSON.parse(text);
+      if (typeof s.input === 'string') input.value = s.input;
+      selectedMap = (s.selectedMap && typeof s.selectedMap === 'object') ? s.selectedMap : {};
+      saveCurrent(); generate();
+      statusEl.textContent = 'Импортировано';
+    }
+
+    function downloadPrintablePage() {
+      const css = document.querySelector('style').textContent;
+      const html = '<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Прописи</title><style>' + css + '\n.bar,.tabs,#pane-anim,.status-bar,.print-actions{display:none!important}.pane{display:block!important;padding:0!important}.page{box-shadow:none;border-radius:0}</style></head><body><div class="page-scroll">' + printPreview.innerHTML + '</div></body></html>';
+      downloadBlob('прописи_печать.html', html, 'text/html;charset=utf-8');
+      statusEl.textContent = 'HTML для печати скачан';
+    }
+
+    /* ---------- PDF ---------- */
+    function tok(d) { return d.match(/[MLQCZmlqcz]|-?\d*\.?\d+(?:e[-+]?\d+)?/g) || []; }
+    function f(n) { return Number(n.toFixed(3)).toString(); }
+    function pathToPdf(d) {
+      const t = tok(d); let i = 0, cmd = '', x = 0, y = 0; const out = [];
+      const num = () => parseFloat(t[i++]);
+      while (i < t.length) {
+        if (/^[MLQCZmlqcz]$/.test(t[i])) cmd = t[i++];
+        if (cmd === 'M' || cmd === 'm') {
+          x = (cmd === 'm' ? x : 0) + num(); y = (cmd === 'm' ? y : 0) + num();
+          out.push(f(x) + ' ' + f(y) + ' m'); cmd = cmd === 'm' ? 'l' : 'L';
+        } else if (cmd === 'L' || cmd === 'l') {
+          x = (cmd === 'l' ? x : 0) + num(); y = (cmd === 'l' ? y : 0) + num();
+          out.push(f(x) + ' ' + f(y) + ' l');
+        } else if (cmd === 'Q' || cmd === 'q') {
+          const x1 = (cmd === 'q' ? x : 0) + num(), y1 = (cmd === 'q' ? y : 0) + num();
+          const x2 = (cmd === 'q' ? x : 0) + num(), y2 = (cmd === 'q' ? y : 0) + num();
+          const c1x = x + 2/3*(x1-x), c1y = y + 2/3*(y1-y);
+          const c2x = x2 + 2/3*(x1-x2), c2y = y2 + 2/3*(y1-y2);
+          out.push(f(c1x)+' '+f(c1y)+' '+f(c2x)+' '+f(c2y)+' '+f(x2)+' '+f(y2)+' c');
+          x = x2; y = y2;
+        } else if (cmd === 'C' || cmd === 'c') {
+          const x1 = (cmd === 'c' ? x : 0) + num(), y1 = (cmd === 'c' ? y : 0) + num();
+          const x2 = (cmd === 'c' ? x : 0) + num(), y2 = (cmd === 'c' ? y : 0) + num();
+          x = (cmd === 'c' ? x : 0) + num(); y = (cmd === 'c' ? y : 0) + num();
+          out.push(f(x1)+' '+f(y1)+' '+f(x2)+' '+f(y2)+' '+f(x)+' '+f(y)+' c');
+        } else if (cmd === 'Z' || cmd === 'z') { out.push('h'); cmd = ''; }
+        else break;
+      }
+      return out.join('\n');
+    }
+    function hexPdf(text) {
+      const b = [0xFE, 0xFF];
+      for (const ch of text) { const c = ch.codePointAt(0); b.push((c>>8)&255, c&255); }
+      return '<' + b.map(v => v.toString(16).padStart(2,'0')).join('').toUpperCase() + '>';
+    }
+    function pdfText(text, x, y, size, gray) {
+      return (gray ?? 0) + ' g BT /F1 ' + size + ' Tf ' + f(x) + ' ' + f(y) + ' Td ' + hexPdf(text) + ' Tj ET 0 g';
+    }
+    function pdfGrid(x, y, s) {
+      const x2 = x+s, y2 = y+s, xm = x+s/2, ym = y+s/2;
+      return [
+        '0.45 0.48 0.53 RG 0.75 w',
+        f(x)+' '+f(y)+' '+f(s)+' '+f(s)+' re S',
+        '0.82 0.85 0.9 RG 0.35 w',
+        f(xm)+' '+f(y)+' m '+f(xm)+' '+f(y2)+' l S',
+        f(x)+' '+f(ym)+' m '+f(x2)+' '+f(ym)+' l S',
+        f(x)+' '+f(y)+' m '+f(x2)+' '+f(y2)+' l S',
+        f(x)+' '+f(y2)+' m '+f(x2)+' '+f(y)+' l S',
+        '0 g 0 G'
+      ].join('\n');
+    }
+    function pdfDrawChar(strokes, active, x, y, size, mode) {
+      if (mode === 'blank') return pdfGrid(x, y, size);
+      const k = size / 1024;
+      const parts = [pdfGrid(x, y, size), 'q', f(k)+' 0 0 '+f(k)+' '+f(x)+' '+f(y + size - 900*k)+' cm'];
+      strokes.forEach((d, i) => {
+        let color = '0.9 0.91 0.92 rg';
+        if (mode === 'full') color = '0.08 0.1 0.14 rg';
+        else if (mode === 'ghost') color = '0.94 0.82 0.68 rg';
+        else if (i < active) color = '0.58 0.6 0.64 rg';
+        else if (i === active) color = '0.85 0.18 0.13 rg';
+        parts.push(color, pathToPdf(d), 'f');
+      });
+      parts.push('Q'); return parts.join('\n');
+    }
+    function buildPdf(items) {
+      const list = selectedItemsForPrint(items).filter(it => it.strokes && it.strokes.length);
+      if (!list.length) { statusEl.textContent = 'Нет отмеченных знаков'; return null; }
+
+      const W = 841.89, H = 595.28, mx = 16, my = 15;
+      const rowH = 54, perPage = 10, gapS = 1.2, gapP = 2.0;
+      const cellS = 18, cellP = 33;
+      const countP = Math.max(15, Math.floor((W - mx*2 - 82 + gapP) / (cellP + gapP)));
+      const pages = [];
+      for (let i = 0; i < list.length; i += perPage) pages.push(list.slice(i, i + perPage));
+
+      const objs = [];
+      const enc = new TextEncoder();
+      const add = s => { objs.push(s); return objs.length; };
+
+      const font = add('<< /Type /Font /Subtype /Type0 /BaseFont /STSong-Light /Encoding /UniGB-UCS2-H /DescendantFonts [<< /Type /Font /Subtype /CIDFontType0 /BaseFont /STSong-Light /CIDSystemInfo << /Registry (Adobe) /Ordering (GB1) /Supplement 2 >> /FontDescriptor << /Type /FontDescriptor /FontName /STSong-Light /Flags 6 /FontBBox [0 -200 1000 900] /ItalicAngle 0 /Ascent 800 /Descent -200 /CapHeight 700 /StemV 80 >> >>] >>');
+
+      const pageRefs = [], contentRefs = [];
+      pages.forEach((slice, pi) => {
+        const c = [];
+        c.push(pdfText('Прописи по чертам (10 знаков на страницу)', mx, H - my - 6, 12, 0.12));
+        c.push(pdfText('Стр. ' + (pi+1) + ' из ' + pages.length, W - mx - 85, H - my - 6, 9, 0.35));
+        let yTop = H - my - 25;
+        slice.forEach(it => {
+          const y = yTop - 45;
+          c.push('0.92 0.94 0.97 RG 0.35 w ' + mx + ' ' + (y-4) + ' ' + (W - mx*2) + ' 52 re S');
+          c.push(pdfText(it.pinyin || '', mx+3, y+38, 9, 0.7));
+          c.push(pdfDrawChar(it.strokes, 0, mx+4, y+8, 30, 'full'));
+          c.push(pdfText('Черты', mx+43, y+40, 7, 0.25));
+          let sx = mx + 82;
+          it.strokes.forEach((_, si) => {
+            c.push(pdfDrawChar(it.strokes, si, sx + si*(cellS+gapS), y+34, cellS, 'step'));
+          });
+          c.push(pdfText('Пропись', mx+43, y+9, 7, 0.25));
+          let px = mx + 82;
+          for (let ci = 0; ci < countP; ci++) {
+            c.push(pdfDrawChar(it.strokes, 0, px + ci*(cellP+gapP), y, cellP, ci < 4 ? 'ghost' : 'blank'));
+          }
+          yTop -= rowH;
+        });
+        const stream = c.join('\n') + '\n';
+        const co = add('<< /Length ' + enc.encode(stream).length + ' >>\nstream\n' + stream + 'endstream');
+        contentRefs.push(co); pageRefs.push(add(''));
+      });
+
+      const pagesObj = add('');
+      const catalog = add('<< /Type /Catalog /Pages ' + pagesObj + ' 0 R >>');
+      pageRefs.forEach((ref, i) => {
+        objs[ref-1] = '<< /Type /Page /Parent ' + pagesObj + ' 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 ' + font + ' 0 R >> >> /Contents ' + contentRefs[i] + ' 0 R >>';
+      });
+      objs[pagesObj-1] = '<< /Type /Pages /Kids [' + pageRefs.map(n => n+' 0 R').join(' ') + '] /Count ' + pageRefs.length + ' >>';
+
+      const chunks = [enc.encode('%PDF-1.7\n%\xE2\xE3\xCF\xD3\n')];
+      const offs = [0]; let pos = chunks[0].length;
+      objs.forEach((o, i) => {
+        offs.push(pos);
+        const b = enc.encode((i+1)+' 0 obj\n'+o+'\nendobj\n');
+        chunks.push(b); pos += b.length;
+      });
+      const xrefPos = pos;
+      const xref = 'xref\n0 ' + (objs.length+1) + '\n0000000000 65535 f \n' +
+        offs.slice(1).map(o => String(o).padStart(10,'0') + ' 00000 n \n').join('');
+      const trailer = 'trailer\n<< /Size ' + (objs.length+1) + ' /Root ' + catalog + ' 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF';
+      chunks.push(enc.encode(xref + trailer));
+      return new Blob(chunks, { type: 'application/pdf' });
+    }
+
+    async function downloadPdf() {
+      const blob = buildPdf(window.__lastItems || []);
+      if (!blob) return;
+      const name = 'прописи_' + new Date().toISOString().slice(0,10) + '.pdf';
+      try {
+        if (window.showSaveFilePicker) {
+          const h = await window.showSaveFilePicker({
+            suggestedName: name,
+            types: [{ description: 'PDF', accept: { 'application/pdf': ['.pdf'] } }]
+          });
+          const w = await h.createWritable();
+          await w.write(blob); await w.close();
+          statusEl.textContent = 'PDF сохранён';
+          return;
+        }
+      } catch (e) { if (e?.name === 'AbortError') return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 800);
+      statusEl.textContent = 'PDF скачан';
+    }
+
+    /* ---------- ВКЛАДКИ ---------- */
+    function showTab(which) {
+      const anim = which === 'anim';
+      tabAnim.classList.toggle('active', anim);
+      tabPrint.classList.toggle('active', !anim);
+      paneAnim.classList.toggle('active', anim);
+      panePrint.classList.toggle('active', !anim);
+    }
+    tabAnim.addEventListener('click', () => showTab('anim'));
+    tabPrint.addEventListener('click', () => showTab('print'));
+
+    /* ---------- МЕНЮ ---------- */
+    menuBtn.addEventListener('click', () => menu.classList.toggle('open'));
+
+    /* ---------- СОБЫТИЯ ---------- */
+    input.addEventListener('input', scheduleGenerate);
+    makeBtn.addEventListener('click', () => { generate(); saveCurrent(); });
+    saveBtn.addEventListener('click', () => { saveCurrent(); statusEl.textContent = 'Сохранено локально'; });
+    saveFileBtn.addEventListener('click', saveStateToComputer);
+    importBtn.addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', async () => {
+      const file = importFile.files?.[0];
+      if (!file) return;
+      importStateFromText(await file.text());
+      importFile.value = '';
+    });
+    downloadPrintBtn.addEventListener('click', downloadPrintablePage);
+    pdfBtn.addEventListener('click', downloadPdf);
+    clearBtn.addEventListener('click', () => {
+      input.value = ''; selectedMap = {};
+      generate(); input.focus();
+      statusEl.textContent = 'Очищено';
+    });
+
+    cards.addEventListener('change', e => {
+      const box = e.target.closest('input[data-select-char]');
+      if (!box) return;
+      selectedMap[box.dataset.selectChar] = box.checked;
+      if (window.__lastItems) {
+        const info = renderPrint(window.__lastItems);
+        statusEl.textContent = 'В печать: ' + info.count + ' знаков, страниц ' + info.pages;
+      }
+      saveCurrent();
+    });
+
+    cards.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      if (action === 'details') {
+        const steps = btn.nextElementSibling;
+        if (steps) {
+          const open = steps.classList.toggle('open');
+          btn.textContent = open ? 'Скрыть черты ▴' : 'Показать все черты ▾';
+        }
+        return;
+      }
+      const ch = btn.dataset.char;
+      if (action === 'speak') { speakChar(ch); return; }
+
+      const w = writers.get(ch);
+      if (!w) {
+        statusEl.textContent = 'Плеер ещё не готов для «' + ch + '», подождите…';
+        return;
+      }
+      if (action === 'animate') w.animateCharacter();
+      if (action === 'quiz') {
+        statusEl.textContent = 'Практика: рисуйте «' + ch + '» в клетке';
+        w.quiz({
+          onMistake: () => {},
+          onCorrectStroke: () => {},
+          onComplete: s => {
+            statusEl.textContent = 'Практика «' + ch + '» завершена, ошибок: ' + (s.totalMistakes ?? 0);
+          }
+        });
+      }
+      if (action === 'reset') { w.showCharacter(); statusEl.textContent = 'Показан знак «' + ch + '»'; }
+    });
+
+    /* ---------- СТАРТ ---------- */
+    loadSaved();
+    generate();
+  </script>
+</body>
+</html>
