@@ -1,63 +1,46 @@
-/* Service Worker для Прописи HSK 1-3 */
-
-const CACHE = 'hanzi-hsk13-v1';
-
-// Что кэшируем при установке
+const CACHE = 'hanzi-v1';
 const ASSETS = [
   './',
   './index.html',
+  './manifest.webmanifest',
   './hsk-data.js',
-  './manifest.json',
   'https://cdn.jsdelivr.net/npm/hanzi-writer@3.7/dist/hanzi-writer.min.js',
   'https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js'
 ];
 
-// Установка — кэшируем статику
-self.addEventListener('install', (e) => {
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+});
+
+self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.open(CACHE)
-      .then((c) => c.addAll(ASSETS))
-      .then(() => self.skipWaiting())
-      .catch(() => {}) // не падаем, если CDN недоступен
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
 });
 
-// Активация — чистим старые версии
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(
-        keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))
-      ))
-      .then(() => self.clients.claim())
-  );
-});
+self.addEventListener('fetch', e => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
 
-// Перехват запросов
-self.addEventListener('fetch', (e) => {
-  if (e.request.method !== 'GET') return;
-
-  e.respondWith(
-    caches.match(e.request).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(e.request).then((res) => {
-        if (res && res.status === 200 && res.type !== 'opaque') {
-          const url = new URL(e.request.url);
-          const cacheable =
-            url.origin === location.origin ||
-            url.hostname.includes('jsdelivr.net');
-          if (cacheable) {
-            const clone = res.clone();
-            caches.open(CACHE).then((c) => c.put(e.request, clone)).catch(() => {});
-          }
-        }
-        return res;
-      }).catch(() => {
-        // офлайн-фолбэк
-        if (e.request.mode === 'navigate') return caches.match('./index.html');
-        return new Response('', { status: 503, statusText: 'Offline' });
-      });
-    })
-  );
+  // Cache-first для своих файлов, stale-while-revalidate для CDN
+  e.respondWith((async () => {
+    const cached = await caches.match(req);
+    if (cached) {
+      // тихо обновляем в фоне
+      fetch(req).then(res => { if (res.ok) caches.open(CACHE).then(c => c.put(req, res.clone())); }).catch(() => {});
+      return cached;
+    }
+    try {
+      const res = await fetch(req);
+      if (res.ok && (req.url.startsWith(self.location.origin) || req.url.includes('jsdelivr'))) {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(req, clone));
+      }
+      return res;
+    } catch {
+      return caches.match('./index.html');
+    }
+  })());
 });
