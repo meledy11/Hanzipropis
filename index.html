@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#ffffff">
-  <title>Прописи иероглифов · HSK 1-6</title>
+  <title>Прописи иероглифов · HSK1</title>
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.7/dist/hanzi-writer.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js"></script>
   <style>
@@ -40,118 +40,309 @@
       padding-right: env(safe-area-inset-right);
     }
 
+    /* ---------- ВЕРХНЯЯ ПАНЕЛЬ ---------- */
     .bar {
-      position: sticky; top: 0; z-index: 30;
+      position: sticky;
+      top: 0;
+      z-index: 30;
       background: rgba(255,255,255,0.94);
       -webkit-backdrop-filter: saturate(180%) blur(14px);
       backdrop-filter: saturate(180%) blur(14px);
       border-bottom: 1px solid var(--line);
       padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
     }
-    .bar-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .brand { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+
+    .bar-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .brand {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
     .menu-btn {
-      width: 40px; height: 40px; min-height: 40px;
-      border: 1px solid var(--line); border-radius: 10px;
-      background: #fff; font-size: 20px; line-height: 1; padding: 0; color: var(--ink);
+      width: 40px;
+      height: 40px;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      font-size: 20px;
+      line-height: 1;
+      padding: 0;
+      color: var(--ink);
     }
-    .input-wrap { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
+
+    .input-wrap {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+    }
+
     textarea {
-      width: 100%; min-height: 52px; max-height: 140px; resize: none;
-      border: 1px solid var(--line-strong); border-radius: 12px;
-      padding: 12px 14px; background: #fff; color: var(--ink);
-      font-size: 18px; line-height: 1.4; outline: none;
-      -webkit-appearance: none; appearance: none;
+      width: 100%;
+      min-height: 52px;
+      max-height: 140px;
+      resize: none;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1.4;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
     }
-    textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.14); }
+
+    textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.14);
+    }
+
     .create-btn {
-      min-height: 52px; min-width: 84px; border: none; border-radius: 12px;
-      background: var(--blue); color: #fff; font-size: 14px; font-weight: 700;
-      padding: 0 14px; cursor: pointer; touch-action: manipulation;
+      min-height: 52px;
+      min-width: 84px;
+      border: none;
+      border-radius: 12px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 0 14px;
+      cursor: pointer;
+      touch-action: manipulation;
     }
     .create-btn:active { background: #1d4ed8; }
 
+    /* ---------- МЕНЮ ---------- */
     .menu {
-      display: none; margin-top: 10px; padding: 6px; background: #fff;
-      border: 1px solid var(--line); border-radius: 12px;
+      display: none;
+      margin-top: 10px;
+      padding: 6px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
       box-shadow: 0 8px 24px rgba(15,23,42,0.08);
-      grid-template-columns: repeat(2, 1fr); gap: 6px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
     }
     .menu.open { display: grid; }
+
     .menu button {
-      min-height: 44px; border: 1px solid var(--line); border-radius: 10px;
-      background: #fff; font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
     }
     .menu button:active { background: #eef2f7; }
 
+    /* ---------- ВКЛАДКИ ---------- */
     .tabs {
-      position: sticky; top: calc(env(safe-area-inset-top) + 108px); z-index: 25;
-      display: flex; gap: 4px; margin: 10px 12px 0; padding: 4px;
-      background: #e6eaf1; border-radius: 12px;
-      overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+      position: sticky;
+      top: calc(env(safe-area-inset-top) + 108px);
+      z-index: 25;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 4px;
+      margin: 10px 12px 0;
+      padding: 4px;
+      background: #e6eaf1;
+      border-radius: 12px;
     }
-    .tabs::-webkit-scrollbar { display: none; }
-    .tab {
-      flex: 1 0 auto; min-height: 40px; min-width: 70px;
-      border: none; border-radius: 9px; background: transparent;
-      color: var(--muted); font-size: 13px; font-weight: 700;
-      cursor: pointer; touch-action: manipulation; padding: 0 10px; white-space: nowrap;
-    }
-    .tab.active { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(15,23,42,0.08); }
 
+    .tab {
+      min-height: 40px;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .tab.active {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 1px 3px rgba(15,23,42,0.08);
+    }
+
+    /* ---------- СОДЕРЖИМОЕ ---------- */
     .pane { display: none; padding: 14px 12px 20px; }
     .pane.active { display: block; }
 
-    .empty-note { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 15px; line-height: 1.6; }
-
-    .cards { display: grid; grid-template-columns: 1fr; gap: 14px; max-width: 1180px; margin: 0 auto; }
-    .card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-    .card-top { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
-    .char-badge {
-      display: grid; place-items: center; width: 52px; height: 52px;
-      border-radius: 12px; background: var(--blue-soft); color: var(--blue);
-      font-family: "KaiTi", "STKaiti", serif; font-size: 34px; line-height: 1; flex: 0 0 auto;
+    .empty-note {
+      text-align: center;
+      color: var(--muted);
+      padding: 60px 20px;
+      font-size: 15px;
+      line-height: 1.6;
     }
+
+    /* ---------- КАРТОЧКА ---------- */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .char-badge {
+      display: grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      background: var(--blue-soft);
+      color: var(--blue);
+      font-family: "KaiTi", "STKaiti", serif;
+      font-size: 34px;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
     .char-meta { flex: 1; min-width: 0; }
     .pinyin { color: var(--red); font-size: 20px; font-weight: 800; line-height: 1.1; }
     .meta { margin-top: 3px; color: var(--muted); font-size: 12px; }
 
-    .switch { position: relative; display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); cursor: pointer; user-select: none; }
+    .switch {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
     .switch input { display: none; }
-    .switch .track { width: 44px; height: 26px; border-radius: 13px; background: #d3d8e2; position: relative; transition: background .18s; flex: 0 0 auto; }
-    .switch .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform .18s; }
+    .switch .track {
+      width: 44px;
+      height: 26px;
+      border-radius: 13px;
+      background: #d3d8e2;
+      position: relative;
+      transition: background .18s;
+      flex: 0 0 auto;
+    }
+    .switch .track::after {
+      content: "";
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      transition: transform .18s;
+    }
     .switch input:checked + .track { background: var(--blue); }
     .switch input:checked + .track::after { transform: translateX(18px); }
 
     .card-body { padding: 14px; }
+
     .writer-wrap { display: grid; place-items: center; margin-bottom: 12px; }
+
     .writer-box {
-      width: 200px; height: 200px; border: 1px solid var(--line); border-radius: 8px;
+      width: 200px;
+      height: 200px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
       background: #fff;
       background-image:
         linear-gradient(45deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%),
         linear-gradient(-45deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%),
         linear-gradient(90deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%),
         linear-gradient(0deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%);
-      touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
 
-    .actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
     .actions button {
-      min-height: 42px; border: 1px solid var(--line); border-radius: 10px;
-      background: #fff; font-size: 12px; font-weight: 600; color: var(--ink);
-      cursor: pointer; padding: 0 4px; touch-action: manipulation;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+      padding: 0 4px;
+      touch-action: manipulation;
     }
     .actions button:active { background: #eef2f7; }
-    .actions button.primary-action { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+    .actions button.primary-action {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
     .actions button.primary-action:active { background: #1d4ed8; }
 
-    .details-toggle { width: 100%; min-height: 38px; border: none; background: transparent; color: var(--blue); font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; padding: 0; }
-    .mini-steps { display: none; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 6px; margin-top: 8px; }
+    /* раскрывающийся список черт */
+    .details-toggle {
+      width: 100%;
+      min-height: 38px;
+      border: none;
+      background: transparent;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      padding: 0;
+    }
+
+    .mini-steps {
+      display: none;
+      grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
     .mini-steps.open { display: grid; }
 
     .grid-cell {
-      position: relative; border: 1.4px solid #7f8794; background: #fff;
+      position: relative;
+      border: 1.4px solid #7f8794;
+      background: #fff;
       background-image:
         linear-gradient(45deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%),
         linear-gradient(-45deg, transparent 49.4%, var(--grid) 49.4%, var(--grid) 50.6%, transparent 50.6%),
@@ -162,86 +353,195 @@
     .mini-steps .grid-cell { aspect-ratio: 1; }
     .grid-cell svg { display: block; width: 100%; height: 100%; }
 
+    /* ---------- HSK СПИСОК ---------- */
     .hsk-grid {
-      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;
-      max-height: 420px; overflow-y: auto; padding: 8px;
-      background: #fff; border: 1px solid var(--line); border-radius: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+      max-height: 340px;
+      overflow-y: auto;
+      padding: 8px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
     }
+
     .hsk-item {
-      padding: 8px 14px; background: #f7f9fc; border: 1px solid #d9e0ea;
-      border-radius: 20px; font-size: 18px; font-family: "KaiTi", "STKaiti", serif;
-      cursor: pointer; transition: all 0.1s; user-select: none; color: var(--ink);
+      padding: 8px 14px;
+      background: #f7f9fc;
+      border: 1px solid #d9e0ea;
+      border-radius: 20px;
+      font-size: 18px;
+      font-family: "KaiTi", "STKaiti", serif;
+      cursor: pointer;
+      transition: all 0.1s;
+      user-select: none;
+      color: var(--ink);
     }
     .hsk-item:active { background: var(--blue-soft); border-color: var(--blue); color: var(--blue); }
     .hsk-item.disabled { opacity: 0.4; pointer-events: none; }
 
-    .hsk-actions { display: flex; gap: 8px; margin: 10px 0 6px; flex-wrap: wrap; }
-    .hsk-actions button {
-      flex: 1; min-width: 120px; min-height: 44px;
-      border: 1px solid var(--line-strong); border-radius: 12px;
-      background: #fff; font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer;
+    .hsk-actions {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0 6px;
+      flex-wrap: wrap;
     }
-    .hsk-actions button.primary-action { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .hsk-actions button {
+      flex: 1;
+      min-width: 120px;
+      min-height: 44px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+    }
+    .hsk-actions button.primary-action {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
     .hsk-actions button:active { opacity: 0.85; }
 
-    .print-actions { display: flex; gap: 8px; max-width: 1180px; margin: 0 auto 12px; flex-wrap: wrap; }
-    .print-actions button {
-      flex: 1; min-width: 140px; min-height: 46px;
-      border: 1px solid var(--line-strong); border-radius: 12px;
-      background: #fff; font-size: 14px; font-weight: 700; color: var(--ink); cursor: pointer; touch-action: manipulation;
+    /* ---------- ПРОПИСИ ---------- */
+    .print-actions {
+      display: flex;
+      gap: 8px;
+      max-width: 1180px;
+      margin: 0 auto 12px;
+      flex-wrap: wrap;
     }
-    .print-actions button.primary-action { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+    .print-actions button {
+      flex: 1;
+      min-width: 140px;
+      min-height: 46px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .print-actions button.primary-action {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
     .print-actions button:active { opacity: .9; }
 
-    .page-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 4px 0 10px; }
-    .page {
-      width: 297mm; min-height: 210mm; margin: 0 auto 14px; padding: 7mm 8mm;
-      background: #fff; border-radius: 8px; box-shadow: 0 6px 20px rgba(15,23,42,0.10);
+    .page-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 4px 0 10px;
     }
+
+    .page {
+      width: 297mm;
+      min-height: 210mm;
+      margin: 0 auto 14px;
+      padding: 7mm 8mm;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 6px 20px rgba(15,23,42,0.10);
+    }
+
     .page-title {
-      display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-      padding-bottom: 2.8mm; margin-bottom: 2.2mm;
-      border-bottom: 0.35mm solid #111827; font-size: 14px; font-weight: 700;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 2.8mm;
+      margin-bottom: 2.2mm;
+      border-bottom: 0.35mm solid #111827;
+      font-size: 14px;
+      font-weight: 700;
     }
     .page-title span { color: var(--muted); font-size: 9px; font-weight: 400; }
 
     .worksheet-row {
-      display: grid; grid-template-columns: 16mm 1fr; gap: 2.5mm;
-      min-height: 18mm; padding: 0.45mm 0; border-bottom: 0.2mm solid #edf1f7;
+      display: grid;
+      grid-template-columns: 16mm 1fr;
+      gap: 2.5mm;
+      min-height: 18mm;
+      padding: 0.45mm 0;
+      border-bottom: 0.2mm solid #edf1f7;
     }
-    .left-info { display: grid; grid-template-rows: auto 1fr; justify-items: center; align-items: center; gap: 1.2mm; }
+
+    .left-info {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      justify-items: center;
+      align-items: center;
+      gap: 1.2mm;
+    }
     .print-pinyin { color: var(--red); font-size: 10px; font-weight: 700; line-height: 1; }
     .big-char-cell { width: 11mm; height: 11mm; }
 
     .right-lines { display: grid; grid-template-rows: auto auto; gap: 0.45mm; min-width: 0; }
-    .line { display: grid; grid-template-columns: 13mm 1fr; align-items: center; gap: 1.8mm; min-width: 0; }
+
+    .line {
+      display: grid;
+      grid-template-columns: 13mm 1fr;
+      align-items: center;
+      gap: 1.8mm;
+      min-width: 0;
+    }
     .line-label { color: #a7334a; font-size: 9px; font-weight: 700; white-space: nowrap; }
 
-    .stroke-strip, .practice-strip { display: flex; align-items: center; gap: 1.05mm; min-width: 0; overflow: hidden; }
+    .stroke-strip, .practice-strip {
+      display: flex; align-items: center; gap: 1.05mm; min-width: 0; overflow: hidden;
+    }
     .stroke-strip .grid-cell { width: var(--stroke-cell); height: var(--stroke-cell); flex: 0 0 auto; }
     .practice-strip .grid-cell { width: var(--practice-cell); height: var(--practice-cell); flex: 0 0 auto; }
 
     .empty-page {
-      display: grid; place-items: center; min-height: 95mm; color: var(--muted);
-      border: 0.3mm dashed #b8c0ce; border-radius: 6px; font-size: 15px;
-    }
-    .error-box {
-      padding: 14px; color: #9f1239; background: #fff1f2;
-      border: 1px solid #fecdd3; border-radius: 10px; line-height: 1.6; font-size: 13px;
+      display: grid;
+      place-items: center;
+      min-height: 95mm;
+      color: var(--muted);
+      border: 0.3mm dashed #b8c0ce;
+      border-radius: 6px;
+      font-size: 15px;
     }
 
+    .error-box {
+      padding: 14px;
+      color: #9f1239;
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-radius: 10px;
+      line-height: 1.6;
+      font-size: 13px;
+    }
+
+    /* ---------- СТАТУС ---------- */
     .status-bar {
-      position: fixed; left: env(safe-area-inset-left); right: env(safe-area-inset-right); bottom: 0;
+      position: fixed;
+      left: env(safe-area-inset-left);
+      right: env(safe-area-inset-right);
+      bottom: 0;
       padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
       background: rgba(255,255,255,0.96);
-      -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-      border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; text-align: center; z-index: 28;
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      z-index: 28;
     }
 
     @media (min-width: 720px) {
       .cards { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
       .writer-box { width: 176px; height: 176px; }
-      .tabs { max-width: 800px; margin-left: auto; margin-right: auto; }
+      .tabs { max-width: 560px; margin-left: auto; margin-right: auto; }
       .pane { padding: 18px; }
     }
 
@@ -249,10 +549,13 @@
 
     @media print {
       body { background: #fff; padding: 0; }
-      .bar, .tabs, .pane#pane-anim, .pane#pane-hsk1, .pane#pane-hsk2, .pane#pane-hsk3, .pane#pane-hsk4, .pane#pane-hsk5, .pane#pane-hsk6, .status-bar, .print-actions, .section-title { display: none !important; }
+      .bar, .tabs, .pane#pane-anim, .pane#pane-hsk, .status-bar, .print-actions, .section-title { display: none !important; }
       .pane { display: block !important; padding: 0 !important; }
       .page-scroll { overflow: visible; padding: 0; }
-      .page { width: auto; min-height: auto; margin: 0; padding: 0; box-shadow: none; border-radius: 0; break-after: page; }
+      .page {
+        width: auto; min-height: auto; margin: 0; padding: 0;
+        box-shadow: none; border-radius: 0; break-after: page;
+      }
       .page:last-child { break-after: auto; }
       .worksheet-row { min-height: 18mm; padding: 1mm 0; }
       .page-title { margin-bottom: 2mm; }
@@ -262,7 +565,7 @@
 <body>
   <header class="bar">
     <div class="bar-top">
-      <div class="brand">Прописи иероглифов · HSK 1-6</div>
+      <div class="brand">Прописи иероглифов · HSK1</div>
       <button class="menu-btn" id="menuBtn" type="button" aria-label="Меню">⋯</button>
     </div>
     <div class="input-wrap">
@@ -278,19 +581,18 @@
     <input id="importFile" type="file" accept="application/json,.json" hidden>
   </header>
 
-  <nav class="tabs" id="tabsNav">
+  <nav class="tabs">
     <button class="tab active" id="tabAnim" type="button">Анимация</button>
     <button class="tab" id="tabPrint" type="button">Прописи</button>
-    <button class="tab" id="tabHsk1" type="button">HSK1</button>
-    <button class="tab" id="tabHsk2" type="button">HSK2</button>
-    <button class="tab" id="tabHsk3" type="button">HSK3</button>
-    <button class="tab" id="tabHsk4" type="button">HSK4</button>
-    <button class="tab" id="tabHsk5" type="button">HSK5</button>
-    <button class="tab" id="tabHsk6" type="button">HSK6</button>
+    <button class="tab" id="tabHsk" type="button">HSK1</button>
   </nav>
 
-  <section class="pane active" id="pane-anim"><div class="cards" id="cards"></div></section>
+  <!-- Анимация -->
+  <section class="pane active" id="pane-anim">
+    <div class="cards" id="cards"></div>
+  </section>
 
+  <!-- Прописи -->
   <section class="pane" id="pane-print">
     <div class="print-actions">
       <button class="primary-action" id="pdfBtn" type="button">Скачать PDF</button>
@@ -304,29 +606,29 @@
     </div>
   </section>
 
-  <section class="pane" id="pane-hsk1"><div style="max-width:1180px;margin:0 auto;"><div class="hsk-actions"><button id="hsk1SelectAll">Выбрать все</button><button id="hsk1DeselectAll">Снять все</button><button class="primary-action" id="hsk1AddSelected">Добавить выбранные</button></div><div style="font-size:13px;color:var(--muted);margin-bottom:4px;">HSK1:</div><div class="hsk-grid" id="hsk1Grid"></div><div style="margin-top:10px;font-size:12px;color:var(--muted);">Всего слов: <span id="hsk1Count">0</span></div></div></section>
-
-  <section class="pane" id="pane-hsk2"><div style="max-width:1180px;margin:0 auto;"><div class="hsk-actions"><button id="hsk2SelectAll">Выбрать все</button><button id="hsk2DeselectAll">Снять все</button><button class="primary-action" id="hsk2AddSelected">Добавить выбранные</button></div><div style="font-size:13px;color:var(--muted);margin-bottom:4px;">HSK2:</div><div class="hsk-grid" id="hsk2Grid"></div><div style="margin-top:10px;font-size:12px;color:var(--muted);">Всего слов: <span id="hsk2Count">0</span></div></div></section>
-
-  <section class="pane" id="pane-hsk3"><div style="max-width:1180px;margin:0 auto;"><div class="hsk-actions"><button id="hsk3SelectAll">Выбрать все</button><button id="hsk3DeselectAll">Снять все</button><button class="primary-action" id="hsk3AddSelected">Добавить выбранные</button></div><div style="font-size:13px;color:var(--muted);margin-bottom:4px;">HSK3:</div><div class="hsk-grid" id="hsk3Grid"></div><div style="margin-top:10px;font-size:12px;color:var(--muted);">Всего слов: <span id="hsk3Count">0</span></div></div></section>
-
-  <section class="pane" id="pane-hsk4"><div style="max-width:1180px;margin:0 auto;"><div class="hsk-actions"><button id="hsk4SelectAll">Выбрать все</button><button id="hsk4DeselectAll">Снять все</button><button class="primary-action" id="hsk4AddSelected">Добавить выбранные</button></div><div style="font-size:13px;color:var(--muted);margin-bottom:4px;">HSK4:</div><div class="hsk-grid" id="hsk4Grid"></div><div style="margin-top:10px;font-size:12px;color:var(--muted);">Всего слов: <span id="hsk4Count">0</span></div></div></section>
-
-  <section class="pane" id="pane-hsk5"><div style="max-width:1180px;margin:0 auto;"><div class="hsk-actions"><button id="hsk5SelectAll">Выбрать все</button><button id="hsk5DeselectAll">Снять все</button><button class="primary-action" id="hsk5AddSelected">Добавить выбранные</button></div><div style="font-size:13px;color:var(--muted);margin-bottom:4px;">HSK5:</div><div class="hsk-grid" id="hsk5Grid"></div><div style="margin-top:10px;font-size:12px;color:var(--muted);">Всего слов: <span id="hsk5Count">0</span></div></div></section>
-
-  <section class="pane" id="pane-hsk6"><div style="max-width:1180px;margin:0 auto;"><div class="hsk-actions"><button id="hsk6SelectAll">Выбрать все</button><button id="hsk6DeselectAll">Снять все</button><button class="primary-action" id="hsk6AddSelected">Добавить выбранные</button></div><div style="font-size:13px;color:var(--muted);margin-bottom:4px;">HSK6:</div><div class="hsk-grid" id="hsk6Grid"></div><div style="margin-top:10px;font-size:12px;color:var(--muted);">Всего слов: <span id="hsk6Count">0</span></div></div></section>
+  <!-- HSK1 -->
+  <section class="pane" id="pane-hsk">
+    <div style="max-width:1180px;margin:0 auto;">
+      <div class="hsk-actions">
+        <button id="hskSelectAll" type="button">Выбрать все</button>
+        <button id="hskDeselectAll" type="button">Снять все</button>
+        <button class="primary-action" id="hskAddSelected" type="button">Добавить выбранные в поле</button>
+      </div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:4px;">Список HSK1 (нажмите, чтобы добавить в поле ввода):</div>
+      <div class="hsk-grid" id="hskGrid"></div>
+      <div style="margin-top:10px;font-size:12px;color:var(--muted);">Всего слов: <span id="hskCount">0</span></div>
+    </div>
+  </section>
 
   <div class="status-bar" id="status">Ожидание ввода</div>
 
-  <!-- ВНЕШНИЙ ФАЙЛ С МАССИВОМ HSK -->
-  <script src="hsk-data.js"></script>
-
-  <!-- ВСЯ ЛОГИКА ЗДЕСЬ -->
   <script>
-    // ---------- ДАННЫЕ (из hsk-data.js) ----------
-    const HSK_DATA = window.HSK_DATA || { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+    // ---------- ДАННЫЕ HSK1 ----------
+    const HSK1_WORDS = [
+      "爱","吧","八","爸爸","百","白天","半","包子","杯子","本","边","病","不","不客气","不要","菜","茶","唱","超市","车","吃","穿","出租车","大","打电话","大家","到","大学","大学生","的","第","店","点","电话","电脑","电视","电影","电影院","弟弟","东西","都","读","对","对不起","多","多少","读书","二","儿子","饭","饭店","房间","非常","飞机","分","分钟","高兴","个","歌","哥哥","给","公司","工作","狗","贵","国","还","孩子","汉语","汉字","号","好","好吃","好看","好听","好玩儿","和","喝","很","后","回","会","火车","几","家","见","件","叫","饺子","家人","鸡蛋","姐姐","今年","今天","九","觉得","开","开车","看","看病","看见","课","可以","口","块","来","老师","了","冷","里","两","零","六","吗","卖","买","妈妈","忙","猫","没关系","妹妹","没事","没（有）","们","面包","面条儿","米饭","明年","明天","名字","那","哪","那边","那个","哪个","那里","哪里","男","男朋友","那儿","哪儿","那些","哪些","呢","能","你","你好","年","你们","您","牛奶","女","女儿","女朋友","女士","朋友","便宜","漂亮","苹果","七","前","钱","千","起床","请","请问","去","去年","热","人","认识","日","三","上","上班","商店","上课","上午","上学","少","谁","生病","什么","十","事","是","时候","时间","手机","书","书店","睡","水","水果","睡觉","说","说话","四","岁","他","它","她","太","他们","它们","她们","天","天气","听","听见","同学","外","外边","玩","晚","晚饭","晚上","喂","问","问题","我","我们","五","午饭","下","下雨","下班","下课","想","先生","现在","小","小朋友","小时","小学","小学生","下午","写","些","谢谢","喜欢","新","星期","星期日","星期天","休息","学","雪","学生","学习","学校","要","也","一","一半","一点儿","衣服","医生","一下","一些","医院","椅子","有","有的","有些","有（一）点儿","雨","元","月","再","在","再见","早","早饭","早上","怎么","怎么样","找","这","这边","这个","这里","真","正在","这儿","这些","只","知道","中国","中文","中午","中学","中学生","住","桌子","字","坐","做","做饭","昨天"
+    ];
 
-    // ---------- ЭЛЕМЕНТЫ ----------
+    // ---------- ОСНОВНЫЕ ПЕРЕМЕННЫЕ ----------
     const input = document.getElementById('input');
     const makeBtn = document.getElementById('makeBtn');
     const menuBtn = document.getElementById('menuBtn');
@@ -343,43 +645,53 @@
     const statusEl = document.getElementById('status');
     const tabAnim = document.getElementById('tabAnim');
     const tabPrint = document.getElementById('tabPrint');
-    const tabHsk1 = document.getElementById('tabHsk1');
-    const tabHsk2 = document.getElementById('tabHsk2');
-    const tabHsk3 = document.getElementById('tabHsk3');
-    const tabHsk4 = document.getElementById('tabHsk4');
-    const tabHsk5 = document.getElementById('tabHsk5');
-    const tabHsk6 = document.getElementById('tabHsk6');
+    const tabHsk = document.getElementById('tabHsk');
     const paneAnim = document.getElementById('pane-anim');
     const panePrint = document.getElementById('pane-print');
-    const paneHsk1 = document.getElementById('pane-hsk1');
-    const paneHsk2 = document.getElementById('pane-hsk2');
-    const paneHsk3 = document.getElementById('pane-hsk3');
-    const paneHsk4 = document.getElementById('pane-hsk4');
-    const paneHsk5 = document.getElementById('pane-hsk5');
-    const paneHsk6 = document.getElementById('pane-hsk6');
+    const paneHsk = document.getElementById('pane-hsk');
+    const hskGrid = document.getElementById('hskGrid');
+    const hskCount = document.getElementById('hskCount');
+    const hskSelectAll = document.getElementById('hskSelectAll');
+    const hskDeselectAll = document.getElementById('hskDeselectAll');
+    const hskAddSelected = document.getElementById('hskAddSelected');
 
     const dataCache = new Map();
     const writers = new Map();
-    const STORAGE_KEY = 'hanziWorksheetCombined.ru.v5';
+    const STORAGE_KEY = 'hanziWorksheetCombined.ru.v3';
     let selectedMap = {};
-    const hskSelectedSets = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set(), 6: new Set() };
+    const hskSelectedSet = new Set();
 
     input.value = '而实候班哈举';
 
     // ---------- УТИЛИТЫ ----------
-    function orderedChineseChars(text) { return [...text].filter(ch => /\p{Script=Han}/u.test(ch)); }
+    function orderedChineseChars(text) {
+      return [...text].filter(ch => /\p{Script=Han}/u.test(ch));
+    }
     function uniqueChars(chars) { return [...new Set(chars)]; }
-    function esc(v) { return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-    function getPinyin(char) { try { if (window.pinyinPro?.pinyin) return window.pinyinPro.pinyin(char, { toneType: 'symbol' }); } catch (e) {} return ''; }
-    async function loadData(char) { if (dataCache.has(char)) return dataCache.get(char); const data = await HanziWriter.loadCharacterData(char); dataCache.set(char, data); return data; }
+    function esc(v) {
+      return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function getPinyin(char) {
+      try {
+        if (window.pinyinPro?.pinyin) return window.pinyinPro.pinyin(char, { toneType: 'symbol' });
+      } catch (e) {}
+      return '';
+    }
+    async function loadData(char) {
+      if (dataCache.has(char)) return dataCache.get(char);
+      const data = await HanziWriter.loadCharacterData(char);
+      dataCache.set(char, data);
+      return data;
+    }
     function speakChar(char) {
       if (!('speechSynthesis' in window)) { statusEl.textContent = 'Синтез речи недоступен'; return; }
       speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(char); u.lang = 'zh-CN'; u.rate = 0.75;
+      const u = new SpeechSynthesisUtterance(char);
+      u.lang = 'zh-CN'; u.rate = 0.75;
       speechSynthesis.speak(u);
     }
 
-    // ---------- SVG ----------
+    // ---------- ОТРИСОВКА SVG ----------
     function strokeSvg(strokes, active, mode) {
       const paths = strokes.map((d, i) => {
         let fill = '#e5e7eb';
@@ -391,18 +703,24 @@
       }).join('');
       return '<svg viewBox="0 0 1024 1024" aria-hidden="true"><g transform="translate(0, 900) scale(1, -1)">' + paths + '</g></svg>';
     }
-    function stepsHtml(strokes) { return strokes.map((_, i) => '<div class="grid-cell">' + strokeSvg(strokes, i, 'step') + '</div>').join(''); }
+    function stepsHtml(strokes) {
+      return strokes.map((_, i) => '<div class="grid-cell">' + strokeSvg(strokes, i, 'step') + '</div>').join('');
+    }
     function practiceHtml(strokes) {
       let cells = '';
-      for (let i = 0; i < 10; i++) cells += '<div class="grid-cell">' + (i < 4 ? strokeSvg(strokes, 0, 'ghost') : '') + '</div>';
+      for (let i = 0; i < 10; i++) {
+        cells += '<div class="grid-cell">' + (i < 4 ? strokeSvg(strokes, 0, 'ghost') : '') + '</div>';
+      }
       return cells;
     }
 
-    // ---------- КАРТОЧКА ----------
+    // ---------- ШАБЛОН КАРТОЧКИ ----------
     function cardHtml(item) {
       const on = selectedMap[item.char] !== false;
       const checkedAttr = on ? ' checked' : '';
-      if (item.error) return '<article class="card"><div class="card-top"><div class="char-badge">' + esc(item.char) + '</div><div class="char-meta"><div class="pinyin">' + esc(item.pinyin) + '</div><div class="meta">данные недоступны</div></div><label class="switch"><input type="checkbox" data-select-char="' + esc(item.char) + '"' + checkedAttr + '><span class="track"></span></label></div><div class="card-body"><div class="error-box">Не удалось загрузить черты.</div></div></article>';
+      if (item.error) {
+        return '<article class="card"><div class="card-top"><div class="char-badge">' + esc(item.char) + '</div><div class="char-meta"><div class="pinyin">' + esc(item.pinyin) + '</div><div class="meta">данные недоступны</div></div><label class="switch"><input type="checkbox" data-select-char="' + esc(item.char) + '"' + checkedAttr + '><span class="track"></span></label></div><div class="card-body"><div class="error-box">Не удалось загрузить черты. Проверьте интернет.</div></div></article>';
+      }
       const code = item.char.codePointAt(0);
       return '<article class="card">' +
         '<div class="card-top">' +
@@ -424,9 +742,11 @@
       '</article>';
     }
 
-    // ---------- СТРОКА ПРОПИСИ ----------
+    // ---------- ШАБЛОН СТРОКИ ПРОПИСИ ----------
     function worksheetRow(item) {
-      if (item.error) return '<div class="worksheet-row"><div class="left-info"><div class="print-pinyin">' + esc(item.pinyin) + '</div><div class="grid-cell big-char-cell"></div></div><div class="error-box">' + esc(item.char) + ' — черты не загружены</div></div>';
+      if (item.error) {
+        return '<div class="worksheet-row"><div class="left-info"><div class="print-pinyin">' + esc(item.pinyin) + '</div><div class="grid-cell big-char-cell"></div></div><div class="error-box">' + esc(item.char) + ' — черты не загружены</div></div>';
+      }
       return '<div class="worksheet-row">' +
         '<div class="left-info"><div class="print-pinyin">' + esc(item.pinyin) + '</div><div class="grid-cell big-char-cell">' + strokeSvg(item.strokes, 0, 'full') + '</div></div>' +
         '<div class="right-lines">' +
@@ -442,29 +762,47 @@
       return 6.35;
     }
 
-    // ---------- ПЛЕЕР ----------
+    // ---------- СОЗДАНИЕ ПЛЕЕРА ----------
     function createWriter(item, attempt = 0) {
       if (item.error) return;
       if (writers.has(item.char)) return;
+
       const id = 'writer-' + item.char.codePointAt(0);
       const el = document.getElementById(id);
-      if (!el) { if (attempt < 12) requestAnimationFrame(() => createWriter(item, attempt + 1)); return; }
+      if (!el) {
+        if (attempt < 12) requestAnimationFrame(() => createWriter(item, attempt + 1));
+        else console.warn('Контейнер плеера не найден:', item.char);
+        return;
+      }
       try {
         const w = HanziWriter.create(id, item.char, {
           width: 200, height: 200, padding: 8,
-          showOutline: true, strokeAnimationSpeed: 1, delayBetweenStrokes: 120,
-          radicalColor: '#16835f', drawingColor: '#2563eb', strokeColor: '#1a1f2b',
-          outlineColor: '#cfd6e3', drawingWidth: 24, showHintAfterMisses: 3,
-          highlightOnComplete: true, highlightColor: '#2563eb'
+          showOutline: true,
+          strokeAnimationSpeed: 1,
+          delayBetweenStrokes: 120,
+          radicalColor: '#16835f',
+          drawingColor: '#2563eb',
+          strokeColor: '#1a1f2b',
+          outlineColor: '#cfd6e3',
+          drawingWidth: 24,
+          showHintAfterMisses: 3,
+          highlightOnComplete: true,
+          highlightColor: '#2563eb'
         });
         writers.set(item.char, w);
         w.animateCharacter();
-      } catch (err) { console.warn('Ошибка плеера', item.char, err); }
+      } catch (err) {
+        console.warn('Ошибка создания плеера', item.char, err);
+      }
     }
 
     // ---------- ХРАНИЛИЩЕ ----------
-    function currentState() { return { input: input.value, selectedMap, savedAt: new Date().toISOString() }; }
-    function saveCurrent() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState())); } catch (e) {} }
+    function currentState() {
+      return { input: input.value, selectedMap, savedAt: new Date().toISOString() };
+    }
+    function saveCurrent() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState())); } catch (e) {}
+    }
     function loadSaved() {
       try {
         const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
@@ -475,10 +813,15 @@
     }
 
     // ---------- ГЕНЕРАЦИЯ ----------
-    function selectedItemsForPrint(all) { return all.filter(it => selectedMap[it.char] !== false); }
+    function selectedItemsForPrint(all) {
+      return all.filter(it => selectedMap[it.char] !== false);
+    }
 
     function renderCards(animationItems) {
-      if (!animationItems.length) { cards.innerHTML = '<div class="empty-note">Введите иероглифы в поле выше,<br>чтобы увидеть анимацию черт.</div>'; return; }
+      if (!animationItems.length) {
+        cards.innerHTML = '<div class="empty-note">Введите иероглифы в поле выше,<br>чтобы увидеть анимацию черт.</div>';
+        return;
+      }
       cards.innerHTML = animationItems.map(cardHtml).join('');
       animationItems.forEach(it => createWriter(it));
     }
@@ -487,9 +830,9 @@
       const items = selectedItemsForPrint(all);
       if (!items.length) {
         printPreview.innerHTML = '<section class="page"><div class="page-title">Прописи по чертам <span>ничего не отмечено</span></div><div class="empty-page">Включите переключатель «В печать» на карточках</div></section>';
-        return { pages: 0, count: 0 };
+        return { pages: 0, count: 0, cell: 0 };
       }
-      tuneSizes();
+      const cell = tuneSizes();
       const per = 10, pages = [];
       for (let i = 0; i < items.length; i += per) {
         const n = pages.length + 1;
@@ -497,19 +840,24 @@
         pages.push('<section class="page"><div class="page-title">Прописи по чертам <span>стр. ' + n + ' из ' + Math.ceil(items.length / per) + '</span></div>' + slice.map(worksheetRow).join('') + '</section>');
       }
       printPreview.innerHTML = pages.join('');
-      return { pages: pages.length, count: items.length };
+      return { pages: pages.length, count: items.length, cell };
     }
 
     async function generate() {
-      if (!window.HanziWriter) { statusEl.textContent = 'Библиотека черт не загрузилась'; return; }
+      if (!window.HanziWriter) {
+        statusEl.textContent = 'Библиотека черт не загрузилась';
+        return;
+      }
       const chars = orderedChineseChars(input.value);
       writers.clear();
+
       if (!chars.length) {
         renderCards([]);
         printPreview.innerHTML = '<section class="page"><div class="page-title">Прописи по чертам <span>создаётся автоматически</span></div><div class="empty-page">Введите иероглифы</div></section>';
         statusEl.textContent = 'Ожидание ввода';
         return;
       }
+
       statusEl.textContent = 'Генерация 0 / ' + chars.length;
       const all = [];
       for (let i = 0; i < chars.length; i++) {
@@ -519,92 +867,101 @@
         try {
           const d = await loadData(ch);
           all.push({ char: ch, pinyin: py, strokes: d.strokes || [] });
-        } catch (e) { all.push({ char: ch, pinyin: py, error: true }); }
+        } catch (e) {
+          all.push({ char: ch, pinyin: py, error: true });
+        }
       }
+
       const animItems = uniqueChars(chars).map(c => all.find(it => it.char === c));
       renderCards(animItems);
       const info = renderPrint(all);
       window.__lastItems = all;
+
       statusEl.textContent = 'Готово: ' + chars.length + ' знаков, в печать ' + info.count + ', страниц ' + info.pages;
+      if (writers.size === 0 && animItems.some(i => !i.error)) {
+        statusEl.textContent += ' · плееры создаются…';
+      }
     }
 
     let timer = 0;
-    function scheduleGenerate() { clearTimeout(timer); timer = setTimeout(() => { generate(); saveCurrent(); }, 420); }
-
-    // ---------- HSK ----------
-    function renderHskGrid(level) {
-      const words = HSK_DATA[level] || [];
-      const grid = document.getElementById('hsk' + level + 'Grid');
-      const countEl = document.getElementById('hsk' + level + 'Count');
-      if (!grid) return;
-      const selectedSet = hskSelectedSets[level];
-      grid.innerHTML = words.map(word => {
-        const selected = selectedSet.has(word);
-        return `<span class="hsk-item${selected ? ' disabled' : ''}" data-word="${esc(word)}" data-level="${level}">${esc(word)}</span>`;
-      }).join('');
-      if (countEl) countEl.textContent = words.length;
+    function scheduleGenerate() {
+      clearTimeout(timer);
+      timer = setTimeout(() => { generate(); saveCurrent(); }, 420);
     }
 
-    document.querySelectorAll('.hsk-grid').forEach(grid => {
-      grid.addEventListener('click', e => {
-        const item = e.target.closest('.hsk-item');
-        if (!item) return;
-        const word = item.dataset.word;
-        const level = parseInt(item.dataset.level, 10);
-        if (!word) return;
-        const current = input.value.trim();
-        input.value = current ? current + ' ' + word : word;
-        item.classList.add('disabled');
-        hskSelectedSets[level].add(word);
-        generate();
-        saveCurrent();
-        statusEl.textContent = `HSK${level}: добавлено "${word}"`;
-      });
+    // ---------- HSK1 ЛОГИКА ----------
+    function renderHskGrid() {
+      hskGrid.innerHTML = HSK1_WORDS.map(word => {
+        const selected = hskSelectedSet.has(word);
+        return `<span class="hsk-item${selected ? ' disabled' : ''}" data-word="${esc(word)}">${esc(word)}</span>`;
+      }).join('');
+      hskCount.textContent = HSK1_WORDS.length;
+    }
+
+    hskGrid.addEventListener('click', (e) => {
+      const item = e.target.closest('.hsk-item');
+      if (!item) return;
+      const word = item.dataset.word;
+      if (!word) return;
+
+      // добавляем в поле ввода с пробелом
+      const current = input.value.trim();
+      input.value = current ? current + ' ' + word : word;
+
+      // блокируем в списке (визуально)
+      item.classList.add('disabled');
+      hskSelectedSet.add(word);
+
+      // генерируем и сохраняем
+      generate();
+      saveCurrent();
+      statusEl.textContent = `Добавлено: ${word}`;
     });
 
-    for (let level = 1; level <= 6; level++) {
-      const selectAllBtn = document.getElementById('hsk' + level + 'SelectAll');
-      const deselectAllBtn = document.getElementById('hsk' + level + 'DeselectAll');
-      const addSelectedBtn = document.getElementById('hsk' + level + 'AddSelected');
-      if (selectAllBtn) selectAllBtn.addEventListener('click', () => {
-        const words = HSK_DATA[level] || [];
-        input.value = words.join(' ');
-        hskSelectedSets[level].clear();
-        words.forEach(w => hskSelectedSets[level].add(w));
-        renderHskGrid(level);
-        generate(); saveCurrent();
-        statusEl.textContent = `HSK${level}: выбраны все`;
-      });
-      if (deselectAllBtn) deselectAllBtn.addEventListener('click', () => {
-        hskSelectedSets[level].clear();
-        renderHskGrid(level);
-        statusEl.textContent = `HSK${level}: сброшено`;
-      });
-      if (addSelectedBtn) addSelectedBtn.addEventListener('click', () => {
-        const set = hskSelectedSets[level];
-        if (set.size === 0) { statusEl.textContent = `HSK${level}: ничего не выбрано`; return; }
-        const words = Array.from(set).join(' ');
-        const current = input.value.trim();
-        input.value = current ? current + ' ' + words : words;
-        set.clear();
-        renderHskGrid(level);
-        generate(); saveCurrent();
-        statusEl.textContent = `HSK${level}: добавлено ${words.split(' ').length}`;
-      });
-    }
+    hskSelectAll.addEventListener('click', () => {
+      const allWords = HSK1_WORDS.join(' ');
+      input.value = allWords;
+      hskSelectedSet.clear();
+      HSK1_WORDS.forEach(w => hskSelectedSet.add(w));
+      renderHskGrid();
+      generate();
+      saveCurrent();
+      statusEl.textContent = 'Выбраны все слова HSK1';
+    });
 
+    hskDeselectAll.addEventListener('click', () => {
+      hskSelectedSet.clear();
+      renderHskGrid();
+      statusEl.textContent = 'Сброшен выбор HSK1';
+    });
+
+    hskAddSelected.addEventListener('click', () => {
+      if (hskSelectedSet.size === 0) {
+        statusEl.textContent = 'Ничего не выбрано';
+        return;
+      }
+      const words = Array.from(hskSelectedSet).join(' ');
+      const current = input.value.trim();
+      input.value = current ? current + ' ' + words : words;
+      hskSelectedSet.clear();
+      renderHskGrid();
+      generate();
+      saveCurrent();
+      statusEl.textContent = `Добавлено ${words.split(' ').length} слов`;
+    });
+
+    // при ручном изменении поля снимаем блокировку с отсутствующих слов
     function syncHskFromInput() {
       const currentChars = new Set([...input.value].filter(ch => /\p{Script=Han}/u.test(ch)));
       let changed = false;
-      for (let level = 1; level <= 6; level++) {
-        const words = HSK_DATA[level] || [];
-        const set = hskSelectedSets[level];
-        words.forEach(word => {
-          const hasChar = [...word].some(ch => currentChars.has(ch));
-          if (!hasChar && set.has(word)) { set.delete(word); changed = true; }
-        });
-      }
-      if (changed) for (let level = 1; level <= 6; level++) renderHskGrid(level);
+      HSK1_WORDS.forEach(word => {
+        const hasChar = [...word].some(ch => currentChars.has(ch));
+        if (!hasChar && hskSelectedSet.has(word)) {
+          hskSelectedSet.delete(word);
+          changed = true;
+        }
+      });
+      if (changed) renderHskGrid();
     }
 
     // ---------- ЭКСПОРТ ----------
@@ -622,9 +979,14 @@
       const name = 'прописи_' + new Date().toISOString().slice(0,10) + '.json';
       try {
         if (window.showSaveFilePicker) {
-          const h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] });
-          const w = await h.createWritable(); await w.write(text); await w.close();
-          statusEl.textContent = 'Сохранено в Файлы'; return;
+          const h = await window.showSaveFilePicker({
+            suggestedName: name,
+            types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+          });
+          const w = await h.createWritable();
+          await w.write(text); await w.close();
+          statusEl.textContent = 'Сохранено в Файлы';
+          return;
         }
       } catch (e) { if (e?.name === 'AbortError') return; }
       downloadBlob(name, text, 'application/json;charset=utf-8');
@@ -641,7 +1003,7 @@
 
     function downloadPrintablePage() {
       const css = document.querySelector('style').textContent;
-      const html = '<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Прописи</title><style>' + css + '\n.bar,.tabs,#pane-anim,#pane-hsk1,#pane-hsk2,#pane-hsk3,#pane-hsk4,#pane-hsk5,#pane-hsk6,.status-bar,.print-actions{display:none!important}.pane{display:block!important;padding:0!important}.page{box-shadow:none;border-radius:0}</style></head><body><div class="page-scroll">' + printPreview.innerHTML + '</div></body></html>';
+      const html = '<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Прописи</title><style>' + css + '\n.bar,.tabs,#pane-anim,#pane-hsk,.status-bar,.print-actions{display:none!important}.pane{display:block!important;padding:0!important}.page{box-shadow:none;border-radius:0}</style></head><body><div class="page-scroll">' + printPreview.innerHTML + '</div></body></html>';
       downloadBlob('прописи_печать.html', html, 'text/html;charset=utf-8');
       statusEl.textContent = 'HTML для печати скачан';
     }
@@ -654,9 +1016,13 @@
       const num = () => parseFloat(t[i++]);
       while (i < t.length) {
         if (/^[MLQCZmlqcz]$/.test(t[i])) cmd = t[i++];
-        if (cmd === 'M' || cmd === 'm') { x = (cmd === 'm' ? x : 0) + num(); y = (cmd === 'm' ? y : 0) + num(); out.push(f(x) + ' ' + f(y) + ' m'); cmd = cmd === 'm' ? 'l' : 'L'; }
-        else if (cmd === 'L' || cmd === 'l') { x = (cmd === 'l' ? x : 0) + num(); y = (cmd === 'l' ? y : 0) + num(); out.push(f(x) + ' ' + f(y) + ' l'); }
-        else if (cmd === 'Q' || cmd === 'q') {
+        if (cmd === 'M' || cmd === 'm') {
+          x = (cmd === 'm' ? x : 0) + num(); y = (cmd === 'm' ? y : 0) + num();
+          out.push(f(x) + ' ' + f(y) + ' m'); cmd = cmd === 'm' ? 'l' : 'L';
+        } else if (cmd === 'L' || cmd === 'l') {
+          x = (cmd === 'l' ? x : 0) + num(); y = (cmd === 'l' ? y : 0) + num();
+          out.push(f(x) + ' ' + f(y) + ' l');
+        } else if (cmd === 'Q' || cmd === 'q') {
           const x1 = (cmd === 'q' ? x : 0) + num(), y1 = (cmd === 'q' ? y : 0) + num();
           const x2 = (cmd === 'q' ? x : 0) + num(), y2 = (cmd === 'q' ? y : 0) + num();
           const c1x = x + 2/3*(x1-x), c1y = y + 2/3*(y1-y);
@@ -684,11 +1050,14 @@
     function pdfGrid(x, y, s) {
       const x2 = x+s, y2 = y+s, xm = x+s/2, ym = y+s/2;
       return [
-        '0.45 0.48 0.53 RG 0.75 w', f(x)+' '+f(y)+' '+f(s)+' '+f(s)+' re S',
-        '0.82 0.85 0.9 RG 0.35 w', f(xm)+' '+f(y)+' m '+f(xm)+' '+f(y2)+' l S',
+        '0.45 0.48 0.53 RG 0.75 w',
+        f(x)+' '+f(y)+' '+f(s)+' '+f(s)+' re S',
+        '0.82 0.85 0.9 RG 0.35 w',
+        f(xm)+' '+f(y)+' m '+f(xm)+' '+f(y2)+' l S',
         f(x)+' '+f(ym)+' m '+f(x2)+' '+f(ym)+' l S',
         f(x)+' '+f(y)+' m '+f(x2)+' '+f(y2)+' l S',
-        f(x)+' '+f(y2)+' m '+f(x2)+' '+f(y)+' l S', '0 g 0 G'
+        f(x)+' '+f(y2)+' m '+f(x2)+' '+f(y)+' l S',
+        '0 g 0 G'
       ].join('\n');
     }
     function pdfDrawChar(strokes, active, x, y, size, mode) {
@@ -708,15 +1077,20 @@
     function buildPdf(items) {
       const list = selectedItemsForPrint(items).filter(it => it.strokes && it.strokes.length);
       if (!list.length) { statusEl.textContent = 'Нет отмеченных знаков'; return null; }
+
       const W = 841.89, H = 595.28, mx = 16, my = 15;
       const rowH = 54, perPage = 10, gapS = 1.2, gapP = 2.0;
       const cellS = 18, cellP = 33;
       const countP = Math.max(15, Math.floor((W - mx*2 - 82 + gapP) / (cellP + gapP)));
       const pages = [];
       for (let i = 0; i < list.length; i += perPage) pages.push(list.slice(i, i + perPage));
-      const objs = []; const enc = new TextEncoder();
+
+      const objs = [];
+      const enc = new TextEncoder();
       const add = s => { objs.push(s); return objs.length; };
+
       const font = add('<< /Type /Font /Subtype /Type0 /BaseFont /STSong-Light /Encoding /UniGB-UCS2-H /DescendantFonts [<< /Type /Font /Subtype /CIDFontType0 /BaseFont /STSong-Light /CIDSystemInfo << /Registry (Adobe) /Ordering (GB1) /Supplement 2 >> /FontDescriptor << /Type /FontDescriptor /FontName /STSong-Light /Flags 6 /FontBBox [0 -200 1000 900] /ItalicAngle 0 /Ascent 800 /Descent -200 /CapHeight 700 /StemV 80 >> >>] >>');
+
       const pageRefs = [], contentRefs = [];
       pages.forEach((slice, pi) => {
         const c = [];
@@ -729,21 +1103,29 @@
           c.push(pdfText(it.pinyin || '', mx+3, y+38, 9, 0.7));
           c.push(pdfDrawChar(it.strokes, 0, mx+4, y+8, 30, 'full'));
           c.push(pdfText('Черты', mx+43, y+40, 7, 0.25));
-          const sx = mx + 82;
-          it.strokes.forEach((_, si) => c.push(pdfDrawChar(it.strokes, si, sx + si*(cellS+gapS), y+34, cellS, 'step')));
+          let sx = mx + 82;
+          it.strokes.forEach((_, si) => {
+            c.push(pdfDrawChar(it.strokes, si, sx + si*(cellS+gapS), y+34, cellS, 'step'));
+          });
           c.push(pdfText('Пропись', mx+43, y+9, 7, 0.25));
-          const px = mx + 82;
-          for (let ci = 0; ci < countP; ci++) c.push(pdfDrawChar(it.strokes, 0, px + ci*(cellP+gapP), y, cellP, ci < 4 ? 'ghost' : 'blank'));
+          let px = mx + 82;
+          for (let ci = 0; ci < countP; ci++) {
+            c.push(pdfDrawChar(it.strokes, 0, px + ci*(cellP+gapP), y, cellP, ci < 4 ? 'ghost' : 'blank'));
+          }
           yTop -= rowH;
         });
         const stream = c.join('\n') + '\n';
         const co = add('<< /Length ' + enc.encode(stream).length + ' >>\nstream\n' + stream + 'endstream');
         contentRefs.push(co); pageRefs.push(add(''));
       });
+
       const pagesObj = add('');
       const catalog = add('<< /Type /Catalog /Pages ' + pagesObj + ' 0 R >>');
-      pageRefs.forEach((ref, i) => { objs[ref-1] = '<< /Type /Page /Parent ' + pagesObj + ' 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 ' + font + ' 0 R >> >> /Contents ' + contentRefs[i] + ' 0 R >>'; });
+      pageRefs.forEach((ref, i) => {
+        objs[ref-1] = '<< /Type /Page /Parent ' + pagesObj + ' 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 ' + font + ' 0 R >> >> /Contents ' + contentRefs[i] + ' 0 R >>';
+      });
       objs[pagesObj-1] = '<< /Type /Pages /Kids [' + pageRefs.map(n => n+' 0 R').join(' ') + '] /Count ' + pageRefs.length + ' >>';
+
       const chunks = [enc.encode('%PDF-1.7\n%\xE2\xE3\xCF\xD3\n')];
       const offs = [0]; let pos = chunks[0].length;
       objs.forEach((o, i) => {
@@ -752,7 +1134,8 @@
         chunks.push(b); pos += b.length;
       });
       const xrefPos = pos;
-      const xref = 'xref\n0 ' + (objs.length+1) + '\n0000000000 65535 f \n' + offs.slice(1).map(o => String(o).padStart(10,'0') + ' 00000 n \n').join('');
+      const xref = 'xref\n0 ' + (objs.length+1) + '\n0000000000 65535 f \n' +
+        offs.slice(1).map(o => String(o).padStart(10,'0') + ' 00000 n \n').join('');
       const trailer = 'trailer\n<< /Size ' + (objs.length+1) + ' /Root ' + catalog + ' 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF';
       chunks.push(enc.encode(xref + trailer));
       return new Blob(chunks, { type: 'application/pdf' });
@@ -764,13 +1147,19 @@
       const name = 'прописи_' + new Date().toISOString().slice(0,10) + '.pdf';
       try {
         if (window.showSaveFilePicker) {
-          const h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'PDF', accept: { 'application/pdf': ['.pdf'] } }] });
-          const w = await h.createWritable(); await w.write(blob); await w.close();
-          statusEl.textContent = 'PDF сохранён'; return;
+          const h = await window.showSaveFilePicker({
+            suggestedName: name,
+            types: [{ description: 'PDF', accept: { 'application/pdf': ['.pdf'] } }]
+          });
+          const w = await h.createWritable();
+          await w.write(blob); await w.close();
+          statusEl.textContent = 'PDF сохранён';
+          return;
         }
       } catch (e) { if (e?.name === 'AbortError') return; }
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = name;
+      const a = document.createElement('a');
+      a.href = url; a.download = name;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 800);
       statusEl.textContent = 'PDF скачан';
@@ -778,33 +1167,41 @@
 
     // ---------- ВКЛАДКИ ----------
     function showTab(which) {
-      const tabs = ['anim', 'print', 'hsk1', 'hsk2', 'hsk3', 'hsk4', 'hsk5', 'hsk6'];
-      const panes = { anim: paneAnim, print: panePrint, hsk1: paneHsk1, hsk2: paneHsk2, hsk3: paneHsk3, hsk4: paneHsk4, hsk5: paneHsk5, hsk6: paneHsk6 };
-      const tabBtns = { anim: tabAnim, print: tabPrint, hsk1: tabHsk1, hsk2: tabHsk2, hsk3: tabHsk3, hsk4: tabHsk4, hsk5: tabHsk5, hsk6: tabHsk6 };
-      tabs.forEach(t => {
-        const isActive = t === which;
-        if (tabBtns[t]) tabBtns[t].classList.toggle('active', isActive);
-        if (panes[t]) panes[t].classList.toggle('active', isActive);
-      });
-      if (which.startsWith('hsk')) {
-        const level = parseInt(which.replace('hsk', ''), 10);
-        syncHskFromInput();
-        renderHskGrid(level);
+      const anim = which === 'anim';
+      const print = which === 'print';
+      const hsk = which === 'hsk';
+
+      tabAnim.classList.toggle('active', anim);
+      tabPrint.classList.toggle('active', print);
+      tabHsk.classList.toggle('active', hsk);
+
+      paneAnim.classList.toggle('active', anim);
+      panePrint.classList.toggle('active', print);
+      paneHsk.classList.toggle('active', hsk);
+
+      if (hsk) {
+        // синхронизируем блокировку слов
+        const currentChars = new Set([...input.value].filter(ch => /\p{Script=Han}/u.test(ch)));
+        HSK1_WORDS.forEach(word => {
+          const hasChar = [...word].some(ch => currentChars.has(ch));
+          if (!hasChar && hskSelectedSet.has(word)) hskSelectedSet.delete(word);
+        });
+        renderHskGrid();
       }
     }
-
     tabAnim.addEventListener('click', () => showTab('anim'));
     tabPrint.addEventListener('click', () => showTab('print'));
-    tabHsk1.addEventListener('click', () => showTab('hsk1'));
-    tabHsk2.addEventListener('click', () => showTab('hsk2'));
-    tabHsk3.addEventListener('click', () => showTab('hsk3'));
-    tabHsk4.addEventListener('click', () => showTab('hsk4'));
-    tabHsk5.addEventListener('click', () => showTab('hsk5'));
-    tabHsk6.addEventListener('click', () => showTab('hsk6'));
+    tabHsk.addEventListener('click', () => showTab('hsk'));
+
+    // ---------- МЕНЮ ----------
+    menuBtn.addEventListener('click', () => menu.classList.toggle('open'));
 
     // ---------- СОБЫТИЯ ----------
-    menuBtn.addEventListener('click', () => menu.classList.toggle('open'));
-    input.addEventListener('input', () => { scheduleGenerate(); setTimeout(syncHskFromInput, 100); });
+    input.addEventListener('input', () => {
+      scheduleGenerate();
+      // синхронизируем с HSK после генерации
+      setTimeout(syncHskFromInput, 100);
+    });
     makeBtn.addEventListener('click', () => { generate(); saveCurrent(); });
     saveBtn.addEventListener('click', () => { saveCurrent(); statusEl.textContent = 'Сохранено локально'; });
     saveFileBtn.addEventListener('click', saveStateToComputer);
@@ -818,9 +1215,8 @@
     downloadPrintBtn.addEventListener('click', downloadPrintablePage);
     pdfBtn.addEventListener('click', downloadPdf);
     clearBtn.addEventListener('click', () => {
-      input.value = ''; selectedMap = {};
-      for (let l = 1; l <= 6; l++) hskSelectedSets[l].clear();
-      for (let l = 1; l <= 6; l++) renderHskGrid(l);
+      input.value = ''; selectedMap = {}; hskSelectedSet.clear();
+      renderHskGrid();
       generate(); input.focus();
       statusEl.textContent = 'Очищено';
     });
@@ -850,19 +1246,29 @@
       }
       const ch = btn.dataset.char;
       if (action === 'speak') { speakChar(ch); return; }
+
       const w = writers.get(ch);
-      if (!w) { statusEl.textContent = 'Плеер не готов для «' + ch + '»'; return; }
+      if (!w) {
+        statusEl.textContent = 'Плеер ещё не готов для «' + ch + '», подождите…';
+        return;
+      }
       if (action === 'animate') w.animateCharacter();
       if (action === 'quiz') {
-        statusEl.textContent = 'Практика: рисуйте «' + ch + '»';
-        w.quiz({ onMistake: () => {}, onCorrectStroke: () => {}, onComplete: s => { statusEl.textContent = 'Практика «' + ch + '» завершена, ошибок: ' + (s.totalMistakes ?? 0); } });
+        statusEl.textContent = 'Практика: рисуйте «' + ch + '» в клетке';
+        w.quiz({
+          onMistake: () => {},
+          onCorrectStroke: () => {},
+          onComplete: s => {
+            statusEl.textContent = 'Практика «' + ch + '» завершена, ошибок: ' + (s.totalMistakes ?? 0);
+          }
+        });
       }
       if (action === 'reset') { w.showCharacter(); statusEl.textContent = 'Показан знак «' + ch + '»'; }
     });
 
     // ---------- СТАРТ ----------
     loadSaved();
-    for (let l = 1; l <= 6; l++) renderHskGrid(l);
+    renderHskGrid();
     generate();
     showTab('anim');
   </script>
