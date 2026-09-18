@@ -5355,12 +5355,100 @@ const ex5_b13 = {
 };
   
   // ---------- Экспорт ----------
+  // ============================================================
+  // СБОРКА HSK 4 (объединение всех кусков)
+  // ============================================================
+  const hsk4 = [
+    ...hsk4Words_b1, ...hsk4Words_b1p2,
+    ...hsk4Words_b2p1, ...hsk4Words_b2p2,
+    ...hsk4Words_b3p1, ...hsk4Words_b3p2,
+    ...hsk4Words_b4p1, ...hsk4Words_b4p2,
+    ...hsk4Words_b4p3, ...hsk4Words_b4p4, ...hsk4Words_b4p5
+  ];
+
+  const py4 = {
+    ...py4_b1, ...py4_b1p2,
+    ...py4_b2p1, ...py4_b2p2,
+    ...py4_b3p1, ...py4_b3p2,
+    ...py4_b4p1, ...py4_b4p2,
+    ...py4_b4p3, ...py4_b4p4, ...py4_b4p5
+  };
+
+  const ru4 = {
+    ...ru4_b1, ...ru4_b1p2,
+    ...ru4_b2p1, ...ru4_b2p2,
+    ...ru4_b3p1, ...ru4_b3p2,
+    ...ru4_b4p1, ...ru4_b4p2,
+    ...ru4_b4p3, ...ru4_b4p4, ...ru4_b4p5
+  };
+
+  const emoji4 = {
+    ...emoji4_b1, ...emoji4_b1p2,
+    ...emoji4_b2p1, ...emoji4_b2p2,
+    ...emoji4_b3p1, ...emoji4_b3p2,
+    ...emoji4_b4p1, ...emoji4_b4p2,
+    ...emoji4_b4p3, ...emoji4_b4p4, ...emoji4_b4p5
+  };
+
+  const ex4 = {
+    ...ex4_b1, ...ex4_b1p2,
+    ...ex4_b2p1, ...ex4_b2p2,
+    ...ex4_b3p1, ...ex4_b3p2,
+    ...ex4_b4p1, ...ex4_b4p2,
+    ...ex4_b4p3, ...ex4_b4p4, ...ex4_b4p5
+  };
+
+  // ============================================================
+  // СБОРКА HSK 5 (объединение всех кусков)
+  // ============================================================
+  const hsk5 = [
+    ...hsk5Words_b1,  ...hsk5Words_b2,  ...hsk5Words_b3,
+    ...hsk5Words_b4,  ...hsk5Words_b5,  ...hsk5Words_b6,
+    ...hsk5Words_b7,  ...hsk5Words_b8,  ...hsk5Words_b9,
+    ...hsk5Words_b10, ...hsk5Words_b11, ...hsk5Words_b12,
+    ...hsk5Words_b13
+  ];
+
+  const py5 = {
+    ...py5_b1,  ...py5_b2,  ...py5_b3,
+    ...py5_b4,  ...py5_b5,  ...py5_b6,
+    ...py5_b7,  ...py5_b8,  ...py5_b9,
+    ...py5_b10, ...py5_b11, ...py5_b12,
+    ...py5_b13
+  };
+
+  const ru5 = {
+    ...ru5_b1,  ...ru5_b2,  ...ru5_b3,
+    ...ru5_b4,  ...ru5_b5,  ...ru5_b6,
+    ...ru5_b7,  ...ru5_b8,  ...ru5_b9,
+    ...ru5_b10, ...ru5_b11, ...ru5_b12,
+    ...ru5_b13
+  };
+
+  const emoji5 = {
+    ...emoji5_b1,  ...emoji5_b2,  ...emoji5_b3,
+    ...emoji5_b4,  ...emoji5_b5,  ...emoji5_b6,
+    ...emoji5_b7,  ...emoji5_b8,  ...emoji5_b9,
+    ...emoji5_b10, ...emoji5_b11, ...emoji5_b12,
+    ...emoji5_b13
+  };
+
+  const ex5 = {
+    ...ex5_b1,  ...ex5_b2,  ...ex5_b3,
+    ...ex5_b4,  ...ex5_b5,  ...ex5_b6,
+    ...ex5_b7,  ...ex5_b8,  ...ex5_b9,
+    ...ex5_b10, ...ex5_b11, ...ex5_b12,
+    ...ex5_b13
+  };
+
+  // ============================================================
+  // ЭКСПОРТ
+  // ============================================================
   window.HSK_DICT = {
     hsk1: { words: hsk1, pinyin: py1, ru: ru1, emoji: emoji1, example: ex1 },
     hsk2: { words: hsk2, pinyin: py2, ru: ru2, emoji: emoji2, example: ex2 },
     hsk3: { words: hsk3, pinyin: py3, ru: ru3, emoji: emoji3, example: ex3 },
     hsk4: { words: hsk4, pinyin: py4, ru: ru4, emoji: emoji4, example: ex4 },
-    charsHsk5: { words: chars5, pinyin: pyChars5, ru: ruChars5, emoji: emojiChars5 },
-    charsHsk6: { words: chars6, pinyin: pyChars6, ru: ruChars6, emoji: emojiChars6 }
+    hsk5: { words: hsk5, pinyin: py5, ru: ru5, emoji: emoji5, example: ex5 }
   };
 })();
