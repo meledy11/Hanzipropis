@@ -86,87 +86,94 @@
   .vocab-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px 16px;
+    gap: 12px 18px; /* чуть больше пространства */
   }
   .card {
     background: #fafcfe;
-    border-radius: 14px;
-    padding: 12px 14px 10px;
+    border-radius: 18px;
+    padding: 16px 16px 12px;
     border: 1px solid #e3eaf2;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 6px;
     page-break-inside: avoid;
     position: relative;
   }
   .card .row1 {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     flex-wrap: wrap;
   }
   .card .emoji {
-    font-size: 24px;
-    line-height: 1;
-    min-width: 32px;
+    font-size: 32px; /* крупнее эмодзи */
+    line-height: 1.1;
+    min-width: 44px;
     text-align: center;
   }
   .card .chinese {
-    font-size: 20px;
+    font-size: 42px; /* было 20px — теперь крупный иероглиф */
     font-weight: 700;
     color: #0f1f30;
     cursor: pointer;
     user-select: none;
+    line-height: 1.2;
+    letter-spacing: 1px;
+    transition: color 0.2s;
   }
   .card .chinese:hover { color: #2c6b9e; }
   .card .pinyin {
-    font-size: 14px;
+    font-size: 22px; /* был 14px — теперь крупный пиньинь */
     color: #7d5d3a;
     background: #f0ece3;
-    padding: 0 8px;
-    border-radius: 30px;
-    font-weight: 500;
+    padding: 2px 14px;
+    border-radius: 40px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
   }
   .card .russian {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 17px;
+    font-weight: 600;
     color: #1a3c5e;
-    margin: 1px 0 0 0;
+    margin: 2px 0 0 0;
+    letter-spacing: 0.2px;
   }
   .card .example {
-    font-size: 12.5px;
+    font-size: 14px;
     color: #2f4a66;
     background: #f2f6fb;
-    padding: 6px 10px;
-    border-radius: 10px;
-    margin-top: 3px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    margin-top: 4px;
     line-height: 1.6;
-    border-left: 3px solid #7fa9c9;
+    border-left: 4px solid #7fa9c9;
     cursor: pointer;
     user-select: none;
   }
   .card .example:hover { background: #e8eff8; }
-  .card .example .zh { font-weight: 600; color: #0d263b; }
+  .card .example .zh { font-weight: 700; color: #0d263b; font-size: 15px; }
   .card .example .ru-ex {
     color: #3d5e7a;
     font-style: italic;
     display: block;
-    margin-top: 1px;
+    margin-top: 2px;
+    font-size: 13px;
   }
   .card .speaker-btn {
     background: none;
     border: none;
-    font-size: 18px;
+    font-size: 24px; /* крупнее кнопка */
     cursor: pointer;
-    opacity: 0.4;
+    opacity: 0.5;
     transition: 0.2s;
-    padding: 4px 6px;
-    border-radius: 30px;
+    padding: 4px 8px;
+    border-radius: 40px;
     line-height: 1;
     margin-left: 4px;
   }
   .card .speaker-btn:hover { opacity: 1; background: #e3ecf5; }
-  .card .example .speaker-btn { font-size: 14px; margin-left: 6px; }
+  .card .example .speaker-btn { font-size: 16px; margin-left: 6px; opacity: 0.6; }
   .footer-note {
     text-align: center;
     color: #5a6f86;
@@ -297,12 +304,17 @@
   @media screen and (max-width: 780px) {
     .vocab-grid { grid-template-columns: repeat(2, 1fr); }
     .tab-btn { font-size: 15px; padding: 12px 14px; min-width: 80px; }
+    .card .chinese { font-size: 36px; }
+    .card .pinyin { font-size: 20px; }
   }
   @media screen and (max-width: 480px) {
     .vocab-grid { grid-template-columns: 1fr; }
     .page { padding: 14px 10px; }
     .tab-btn { font-size: 13px; padding: 10px 8px; min-width: 60px; }
     .tabs { flex-wrap: wrap; }
+    .card .chinese { font-size: 40px; } /* на телефоне всё ещё крупно */
+    .card .pinyin { font-size: 22px; }
+    .card .emoji { font-size: 28px; }
     .back-to-worksheets {
       top: calc(8px + env(safe-area-inset-top));
       left: 10px;
@@ -328,15 +340,15 @@
       border: 1px solid #d0d8e0;
     }
     .page:last-child { page-break-after: avoid; }
-    .card { border: 1px solid #cbd5e2; background: #fafcff; padding: 8px 10px; }
-    .card .chinese { font-size: 18px; }
-    .card .pinyin { font-size: 12px; }
-    .card .russian { font-size: 13px; }
-    .card .example { font-size: 11.5px; padding: 5px 8px; }
+    .card { border: 1px solid #cbd5e2; background: #fafcff; padding: 10px 12px; }
+    .card .chinese { font-size: 32px; }
+    .card .pinyin { font-size: 18px; }
+    .card .russian { font-size: 15px; }
+    .card .example { font-size: 13px; padding: 6px 10px; }
     .card .speaker-btn { display: none; }
     .header h1 { font-size: 20px; }
     .header .block-tag { font-size: 14px; }
-    .vocab-grid { gap: 8px 12px; }
+    .vocab-grid { gap: 10px 14px; }
   }
 </style>
 </head>
@@ -467,7 +479,7 @@ const AUDIO_DIRS = [
   'Audio/hsk5/',
   'Audio/hsk6/',
   'Audio/hsk79/',
-  'Audio/'          // fallback на плоскую папку
+  'Audio/'
 ];
 const AUDIO_PREFIX = 'cmn-';
 const audioCache = new Map();
@@ -499,10 +511,8 @@ function speakChinese(text) {
   if (!text) return;
   const key = text;
   const cached = audioCache.get(key);
-
   if (cached && cached.available === false) { speakWithBrowser(text); return; }
   if (cached && cached.audio) { playAudio(cached.audio, text, key); return; }
-
   tryNextCandidate(AUDIO_DIRS, 0, text, key);
 }
 
@@ -512,11 +522,9 @@ function tryNextCandidate(dirs, index, text, key) {
     speakWithBrowser(text);
     return;
   }
-
   const audio = new Audio(dirs[index] + AUDIO_PREFIX + text + '.mp3');
   audio.preload = 'auto';
   let resolved = false;
-
   const onError = () => {
     if (resolved) return;
     resolved = true;
@@ -528,11 +536,9 @@ function tryNextCandidate(dirs, index, text, key) {
     audioCache.set(key, { available: true, audio });
     playAudio(audio, text, key);
   };
-
   audio.addEventListener('error', onError, { once: true });
   audio.addEventListener('canplaythrough', onCanPlay, { once: true });
   audio.addEventListener('loadeddata', onCanPlay, { once: true });
-
   try { audio.load(); } catch (e) { onError(); }
 }
 
@@ -699,7 +705,6 @@ renderBlocks('hsk5', chars5, w => pyChars5[w], w => ruChars5[w], w => emojiChars
 // HSK 7–9 — иероглифы (пока пусто — заполнится автоматически, когда добавите данные)
 (function () {
   if (!chars79.length) return;
-  // Если данных много — блоки создаются динамически в контейнер внутри вкладки
   const tab = document.getElementById('tab-hsk79');
   if (!tab) return;
   const totalBlocks = Math.ceil(chars79.length / 50);
