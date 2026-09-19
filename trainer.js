@@ -1,6 +1,5 @@
-/* trainer.js — Тренажёр каллиграфии (отдельная страница trainer.html)
+/* trainer.js — Тренажёр каллиграфии с маркером и автоплеем
    Зависимости: dictionary-data.js (window.HSK_DICT), pinyinPro, HanziWriter
-   Озвучка встроена: Audio/cmn-*.mp3 → fallback на браузер
 */
 (function () {
   'use strict';
@@ -28,12 +27,12 @@
     speechSynthesis.onvoiceschanged = pickZhVoice;
   }
 
-  function speakWithBrowser(text) {
+  function speakWithBrowser(text, rate) {
     if (!('speechSynthesis' in window)) return;
     try { speechSynthesis.cancel(); } catch (e) {}
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'zh-CN';
-    u.rate = 0.85;
+    u.rate = rate || 0.85;
     u.pitch = 1;
     u.volume = 1;
     if (zhVoice) u.voice = zhVoice;
@@ -47,6 +46,7 @@
   function playAudio(audio, text, key) {
     try {
       audio.currentTime = 0;
+      audio.playbackRate = 1.0;
       const p = audio.play();
       if (p && p.catch) {
         p.catch(() => {
@@ -326,6 +326,16 @@
   let isShowingHint = false;
   let dom = {};
 
+  // Маркер
+  let markerCtx = null;
+  let isDrawing = false;
+  let markerActive = false;
+
+  // Автоплей
+  let autoplayActive = false;
+  let autoplayCancelToken = 0;
+  let autoplayDelayTimer = null;
+
   function cacheDom() {
     dom = {
       char: document.getElementById('charDisplay'),
@@ -334,6 +344,12 @@
       status: document.getElementById('charStatus'),
       canvasWrap: document.getElementById('canvasWrap'),
       hw: document.getElementById('hw-container'),
+      markerCanvas: document.getElementById('marker-canvas'),
+      markerToggle: document.getElementById('markerToggle'),
+      clearMarkerBtn: document.getElementById('clearMarkerBtn'),
+      autoplayBtn: document.getElementById('autoplayBtn'),
+      autoplayIndicator: document.getElementById('autoplayIndicator'),
+      autoplayProgress: document.getElementById('autoplayProgress'),
       progress: document.getElementById('progressFill'),
       score: document.getElementById('scoreDisplay'),
       accuracy: document.getElementById('accuracyDisplay'),
@@ -353,6 +369,117 @@
       examplesList: document.getElementById('examplesList'),
       examplesClose: document.getElementById('examplesClose')
     };
+  }
+
+  // ============================================================
+  // МАРКЕР
+  // ============================================================
+  function initMarkerCanvas() {
+    if (!dom.markerCanvas) return;
+    resizeMarkerCanvas();
+    markerCtx = dom.markerCanvas.getContext('2d');
+    markerCtx.lineCap = 'round';
+    markerCtx.lineJoin = 'round';
+    markerCtx.strokeStyle = '#d92d20';
+    markerCtx.lineWidth = 4;
+
+    const canvas = dom.markerCanvas;
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+      if (e.touches && e.touches[0]) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else if (e.changedTouches && e.changedTouches[0]) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    function startDraw(e) {
+      if (!markerActive) return;
+      e.preventDefault();
+      isDrawing = true;
+      const pos = getPos(e);
+      markerCtx.beginPath();
+      markerCtx.moveTo(pos.x, pos.y);
+    }
+
+    function moveDraw(e) {
+      if (!markerActive || !isDrawing) return;
+      e.preventDefault();
+      const pos = getPos(e);
+      markerCtx.lineTo(pos.x, pos.y);
+      markerCtx.stroke();
+    }
+
+    function endDraw(e) {
+      if (!markerActive) return;
+      isDrawing = false;
+    }
+
+    // Mouse
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+    // Touch
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', moveDraw, { passive: false });
+    canvas.addEventListener('touchend', endDraw);
+    canvas.addEventListener('touchcancel', endDraw);
+  }
+
+  function resizeMarkerCanvas() {
+    if (!dom.markerCanvas) return;
+    const rect = dom.markerCanvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    dom.markerCanvas.width = rect.width * dpr;
+    dom.markerCanvas.height = rect.height * dpr;
+    if (markerCtx) {
+      markerCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      markerCtx.lineCap = 'round';
+      markerCtx.lineJoin = 'round';
+      markerCtx.strokeStyle = '#d92d20';
+      markerCtx.lineWidth = 4;
+    }
+  }
+
+  function clearMarker() {
+    if (!markerCtx || !dom.markerCanvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    markerCtx.save();
+    markerCtx.setTransform(1, 0, 0, 1, 0, 0);
+    markerCtx.clearRect(0, 0, dom.markerCanvas.width, dom.markerCanvas.height);
+    markerCtx.restore();
+  }
+
+  function toggleMarker() {
+    markerActive = !markerActive;
+    if (dom.markerCanvas) {
+      dom.markerCanvas.classList.toggle('active', markerActive);
+    }
+    if (dom.markerToggle) {
+      dom.markerToggle.classList.toggle('active', markerActive);
+      dom.markerToggle.innerHTML = markerActive ? '🖊️ Маркер ВКЛ' : '🖊️ Маркер';
+    }
+    if (dom.instruction) {
+      if (markerActive) {
+        dom.instruction.textContent = '🖊️ Маркер включён — рисуйте поверх иероглифа';
+        dom.instruction.style.color = '#92400e';
+      } else {
+        dom.instruction.textContent = '✍️ Обведите иероглиф по порядку черт';
+        dom.instruction.style.color = '#6b7280';
+      }
+    }
   }
 
   // ============================================================
@@ -411,7 +538,8 @@
   // ============================================================
   // ЗАГРУЗКА ИЕРОГЛИФА
   // ============================================================
-  function loadCharacter(index) {
+  function loadCharacter(index, opts) {
+    opts = opts || {};
     if (currentItems.length === 0 || !dom.hw) return;
     const data = currentItems[index];
     dom.char.textContent = data.char;
@@ -421,9 +549,13 @@
     isShowingHint = false;
     updateProgress(0);
     updateCharStatus();
-    if (dom.instruction) {
-      dom.instruction.textContent = '✍️ Обведите иероглиф по порядку черт';
-      dom.instruction.style.color = '#6b7280';
+    clearMarker();
+
+    if (!opts.silent && dom.instruction) {
+      dom.instruction.textContent = markerActive
+        ? '🖊️ Маркер включён — рисуйте поверх иероглифа'
+        : '✍️ Обведите иероглиф по порядку черт';
+      dom.instruction.style.color = markerActive ? '#92400e' : '#6b7280';
     }
 
     dom.hw.innerHTML = '';
@@ -472,6 +604,9 @@
       },
       onComplete: function (summaryData) {
         if (isShowingHint) return;
+        // Не считаем в автоплее
+        if (autoplayActive) return;
+
         score += 100;
         const accuracy = summaryData.totalMistakes === 0 ? 100 :
           Math.max(0, Math.round((1 - summaryData.totalMistakes / currentStrokesTotal) * 100));
@@ -514,6 +649,164 @@
         }, 800);
       }
     });
+  }
+
+  // ============================================================
+  // АВТОПЛЕЙ — прогон всей серии подряд
+  // ============================================================
+  function startAutoplay() {
+    if (autoplayActive) {
+      stopAutoplay();
+      return;
+    }
+    if (currentItems.length === 0) return;
+
+    autoplayActive = true;
+    autoplayCancelToken++;
+    const myToken = autoplayCancelToken;
+
+    if (dom.autoplayBtn) {
+      dom.autoplayBtn.classList.add('active');
+      dom.autoplayBtn.innerHTML = '⏸️ Стоп';
+    }
+    if (dom.autoplayIndicator) {
+      dom.autoplayIndicator.classList.add('active');
+    }
+
+    // Запускаем с текущего
+    autoplayLoop(myToken);
+  }
+
+  function stopAutoplay() {
+    autoplayActive = false;
+    autoplayCancelToken++;
+    if (autoplayDelayTimer) {
+      clearTimeout(autoplayDelayTimer);
+      autoplayDelayTimer = null;
+    }
+    if (dom.autoplayBtn) {
+      dom.autoplayBtn.classList.remove('active');
+      dom.autoplayBtn.innerHTML = '▶️ Авто';
+    }
+    if (dom.autoplayIndicator) {
+      dom.autoplayIndicator.classList.remove('active');
+    }
+    // Возвращаем интерактивный квиз
+    if (hwWriter && currentItems.length > 0) {
+      try { hwWriter.cancelQuiz(); } catch (e) {}
+      loadCharacter(currentIndex, { silent: true });
+    }
+  }
+
+  async function autoplayLoop(token) {
+    while (autoplayActive && token === autoplayCancelToken) {
+      const data = currentItems[currentIndex];
+
+      // Обновляем индикатор
+      if (dom.autoplayProgress) {
+        dom.autoplayProgress.textContent = (currentIndex + 1) + ' / ' + currentItems.length;
+      }
+
+      // Меняем информацию
+      dom.char.textContent = data.char;
+      dom.pinyin.textContent = data.pinyin || getPinyin(data.char);
+      dom.meaning.textContent = data.meaning || getCharMeaning(data.char);
+      updateCharStatus();
+      clearMarker();
+
+      // Создаём writer в режиме показа
+      dom.hw.innerHTML = '';
+      const size = Math.min(dom.hw.clientWidth, dom.hw.clientHeight) || 300;
+
+      try {
+        hwWriter = HanziWriter.create(dom.hw, data.char, {
+          width: size,
+          height: size,
+          padding: 15,
+          showOutline: true,
+          strokeAnimationSpeed: 0.8,
+          delayBetweenStrokes: 400,
+          drawingWidth: Math.max(15, size * 0.06),
+          showCharacter: false,
+          highlightColor: '#d92d20',
+          outlineColor: '#d9e0ea',
+          drawingColor: '#1a1f2b'
+        });
+      } catch (e) {
+        console.warn('Autoplay: ошибка создания writer', e);
+        break;
+      }
+
+      if (dom.instruction) {
+        dom.instruction.textContent = '▶️ Автоплей: смотрите и слушайте (' + (currentIndex + 1) + '/' + currentItems.length + ')';
+        dom.instruction.style.color = '#2563eb';
+      }
+
+      // Озвучка #1 — сразу
+      speakChinese(data.char);
+
+      // Анимация + озвучка #2 посередине
+      await new Promise((resolve) => {
+        let spokeSecond = false;
+        const charData = hwWriter.getCharacterData ? null : null;
+
+        hwWriter.animateCharacter({
+          onComplete: () => {
+            // Озвучка #2 — ещё раз после завершения
+            setTimeout(() => {
+              speakChinese(data.char);
+            }, 100);
+            resolve();
+          }
+        });
+
+        // Озвучка #2 — середина анимации (приблизительно через 1.5 сек)
+        setTimeout(() => {
+          if (!spokeSecond && autoplayActive && token === autoplayCancelToken) {
+            spokeSecond = true;
+            // Не перебиваем первую — ждём минимум 1.5 сек
+            // Вторая озвучка уже запланирована после onComplete
+          }
+        }, 1500);
+      });
+
+      if (!autoplayActive || token !== autoplayCancelToken) break;
+
+      // Пауза перед следующим
+      await new Promise((resolve) => {
+        autoplayDelayTimer = setTimeout(resolve, 1200);
+      });
+
+      if (!autoplayActive || token !== autoplayCancelToken) break;
+
+      // Следующий
+      currentIndex = (currentIndex + 1) % currentItems.length;
+
+      // Небольшая пауза, чтобы дать браузеру отдышаться
+      await new Promise((resolve) => {
+        autoplayDelayTimer = setTimeout(resolve, 300);
+      });
+    }
+
+    // Завершили
+    if (token === autoplayCancelToken && autoplayActive) {
+      // Прошли круг — стоп
+      autoplayActive = false;
+      if (dom.autoplayBtn) {
+        dom.autoplayBtn.classList.remove('active');
+        dom.autoplayBtn.innerHTML = '▶️ Авто';
+      }
+      if (dom.autoplayIndicator) {
+        dom.autoplayIndicator.classList.remove('active');
+      }
+      showFloating('🎉 Круг завершён!');
+      if (dom.instruction) {
+        dom.instruction.textContent = '🎉 Автоплей завершён';
+        dom.instruction.style.color = '#16835f';
+      }
+      // Возвращаем интерактив
+      loadCharacter(currentIndex, { silent: true });
+    }
   }
 
   // ============================================================
@@ -592,6 +885,7 @@
   // РЕЖИМЫ
   // ============================================================
   function loadCategory(level) {
+    stopAutoplay();
     const chars = getCategoryChars(level);
     if (chars.length === 0) {
       currentItems = [];
@@ -613,6 +907,7 @@
   }
 
   function startDueReview() {
+    stopAutoplay();
     const due = Progress.getDueForReview();
     if (due.length === 0) {
       showFloating('🎉 Всё повторено!');
@@ -633,6 +928,7 @@
   }
 
   function startWeakSpots() {
+    stopAutoplay();
     const weak = Progress.getWeakSpots();
     if (weak.length === 0) {
       showFloating('✨ Нет слабых мест!');
@@ -682,14 +978,29 @@
     if (!dom.hw) return;
     Progress.load();
 
-    if (dom.hintBtn) dom.hintBtn.addEventListener('click', showHint);
-    if (dom.nextBtn) dom.nextBtn.addEventListener('click', nextCharacter);
+    // Кнопки
+    if (dom.hintBtn) dom.hintBtn.addEventListener('click', () => {
+      if (autoplayActive) stopAutoplay();
+      showHint();
+    });
+    if (dom.nextBtn) dom.nextBtn.addEventListener('click', () => {
+      if (autoplayActive) stopAutoplay();
+      nextCharacter();
+    });
     if (dom.examplesBtn) dom.examplesBtn.addEventListener('click', showExamples);
+    if (dom.clearMarkerBtn) dom.clearMarkerBtn.addEventListener('click', () => {
+      clearMarker();
+      showFloating('🧹 Очищено');
+    });
+    if (dom.markerToggle) dom.markerToggle.addEventListener('click', toggleMarker);
+    if (dom.autoplayBtn) dom.autoplayBtn.addEventListener('click', startAutoplay);
 
+    // Озвучка по клику на иероглиф
     if (dom.char) dom.char.addEventListener('click', () => {
       if (currentItems.length > 0) speakChinese(currentItems[currentIndex].char);
     });
 
+    // Модалка
     if (dom.examplesClose) dom.examplesClose.addEventListener('click', () => {
       dom.examplesModal.classList.remove('show');
     });
@@ -697,30 +1008,46 @@
       if (e.target === dom.examplesModal) dom.examplesModal.classList.remove('show');
     });
 
+    // Режимы
     document.querySelectorAll('.mode-btn').forEach(btn => {
       btn.addEventListener('click', () => switchMode(btn.dataset.mode));
     });
 
+    // Маркер
+    initMarkerCanvas();
+
+    // Resize
     let rt = 0;
     window.addEventListener('resize', () => {
       clearTimeout(rt);
       rt = setTimeout(() => {
-        if (hwWriter && !isShowingHint && currentItems.length > 0) loadCharacter(currentIndex);
+        resizeMarkerCanvas();
+        if (hwWriter && !isShowingHint && !autoplayActive && currentItems.length > 0) {
+          loadCharacter(currentIndex, { silent: true });
+        }
       }, 250);
     });
 
+    // Оффлайн
     const updateOnline = () => document.body.classList.toggle('offline', !navigator.onLine);
     window.addEventListener('online', updateOnline);
     window.addEventListener('offline', updateOnline);
     updateOnline();
 
-    // Регистрация SW (если ещё не зарегистрирован с index.html)
+    // SW
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW:', err));
     }
 
+    // Старт
     switchMode('1');
     setInterval(updateStats, 60000);
+
+    // Останавливаем автоплей при уходе со страницы
+    window.addEventListener('beforeunload', () => {
+      autoplayActive = false;
+      autoplayCancelToken++;
+    });
 
     initialized = true;
   }
