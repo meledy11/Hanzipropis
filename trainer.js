@@ -8,7 +8,7 @@
   const REVIEW_INTERVALS = [0, 1, 2, 4, 7, 15, 30, 60, 120];
 
   // ============================================================
-  // ОЗВУЧКА
+  // ОЗВУЧКА — идентична рабочей версии из index.html
   // ============================================================
   const AUDIO_DIR = 'Audio/';
   const AUDIO_PREFIX = 'cmn-';
@@ -27,12 +27,12 @@
     speechSynthesis.onvoiceschanged = pickZhVoice;
   }
 
-  function speakWithBrowser(text, rate) {
+  function speakWithBrowser(text) {
     if (!('speechSynthesis' in window)) return;
     try { speechSynthesis.cancel(); } catch (e) {}
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'zh-CN';
-    u.rate = rate || 0.85;
+    u.rate = 0.85;
     u.pitch = 1;
     u.volume = 1;
     if (zhVoice) u.voice = zhVoice;
@@ -41,23 +41,6 @@
 
   function audioPathFor(text) {
     return AUDIO_DIR + AUDIO_PREFIX + text + '.mp3';
-  }
-
-  function playAudio(audio, text, key) {
-    try {
-      audio.currentTime = 0;
-      audio.playbackRate = 1.0;
-      const p = audio.play();
-      if (p && p.catch) {
-        p.catch(() => {
-          audioCache.set(key, { available: false, audio: null });
-          speakWithBrowser(text);
-        });
-      }
-    } catch (e) {
-      audioCache.set(key, { available: false, audio: null });
-      speakWithBrowser(text);
-    }
   }
 
   function speakChinese(text, opts) {
@@ -98,6 +81,25 @@
 
     try { audio.load(); } catch (e) { onError(); }
   }
+
+  function playAudio(audio, text, key) {
+    try {
+      audio.currentTime = 0;
+      const p = audio.play();
+      if (p && p.catch) {
+        p.catch(() => {
+          audioCache.set(key, { available: false, audio: null });
+          speakWithBrowser(text);
+        });
+      }
+    } catch (e) {
+      audioCache.set(key, { available: false, audio: null });
+      speakWithBrowser(text);
+    }
+  }
+
+  // Экспортируем наружу — вдруг пригодится
+  window.speakChinese = speakChinese;
 
   // ============================================================
   // ДОСТУП К БАЗЕ
@@ -330,6 +332,7 @@
   let markerCtx = null;
   let isDrawing = false;
   let markerActive = false;
+  let lastX = 0, lastY = 0;
 
   // Автоплей
   let autoplayActive = false;
@@ -372,16 +375,17 @@
   }
 
   // ============================================================
-  // МАРКЕР
+  // МАРКЕР — толстый + белая обводка + красная линия
   // ============================================================
+  const MARKER_COLOR = '#dc2626';                 // яркий красный
+  const MARKER_WIDTH = 14;                        // толщина красной линии
+  const MARKER_OUTLINE_COLOR = 'rgba(255,255,255,0.95)'; // белая подложка
+  const MARKER_OUTLINE_WIDTH = 20;                // толщина подложки
+
   function initMarkerCanvas() {
     if (!dom.markerCanvas) return;
     resizeMarkerCanvas();
     markerCtx = dom.markerCanvas.getContext('2d');
-    markerCtx.lineCap = 'round';
-    markerCtx.lineJoin = 'round';
-    markerCtx.strokeStyle = '#d92d20';
-    markerCtx.lineWidth = 4;
 
     const canvas = dom.markerCanvas;
 
@@ -404,21 +408,44 @@
       };
     }
 
+    function drawSegment(x1, y1, x2, y2) {
+      // 1) белая подложка (шире)
+      markerCtx.strokeStyle = MARKER_OUTLINE_COLOR;
+      markerCtx.lineWidth = MARKER_OUTLINE_WIDTH;
+      markerCtx.lineCap = 'round';
+      markerCtx.lineJoin = 'round';
+      markerCtx.beginPath();
+      markerCtx.moveTo(x1, y1);
+      markerCtx.lineTo(x2, y2);
+      markerCtx.stroke();
+
+      // 2) красная линия поверх
+      markerCtx.strokeStyle = MARKER_COLOR;
+      markerCtx.lineWidth = MARKER_WIDTH;
+      markerCtx.beginPath();
+      markerCtx.moveTo(x1, y1);
+      markerCtx.lineTo(x2, y2);
+      markerCtx.stroke();
+    }
+
     function startDraw(e) {
       if (!markerActive) return;
       e.preventDefault();
       isDrawing = true;
       const pos = getPos(e);
-      markerCtx.beginPath();
-      markerCtx.moveTo(pos.x, pos.y);
+      lastX = pos.x;
+      lastY = pos.y;
+      // Точка при касании (чтобы сразу появилась точка)
+      drawSegment(pos.x, pos.y, pos.x + 0.1, pos.y + 0.1);
     }
 
     function moveDraw(e) {
       if (!markerActive || !isDrawing) return;
       e.preventDefault();
       const pos = getPos(e);
-      markerCtx.lineTo(pos.x, pos.y);
-      markerCtx.stroke();
+      drawSegment(lastX, lastY, pos.x, pos.y);
+      lastX = pos.x;
+      lastY = pos.y;
     }
 
     function endDraw(e) {
@@ -426,12 +453,11 @@
       isDrawing = false;
     }
 
-    // Mouse
     canvas.addEventListener('mousedown', startDraw);
     canvas.addEventListener('mousemove', moveDraw);
     canvas.addEventListener('mouseup', endDraw);
     canvas.addEventListener('mouseleave', endDraw);
-    // Touch
+
     canvas.addEventListener('touchstart', startDraw, { passive: false });
     canvas.addEventListener('touchmove', moveDraw, { passive: false });
     canvas.addEventListener('touchend', endDraw);
@@ -442,20 +468,17 @@
     if (!dom.markerCanvas) return;
     const rect = dom.markerCanvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    dom.markerCanvas.width = rect.width * dpr;
-    dom.markerCanvas.height = rect.height * dpr;
+    dom.markerCanvas.width = Math.max(1, rect.width * dpr);
+    dom.markerCanvas.height = Math.max(1, rect.height * dpr);
     if (markerCtx) {
       markerCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       markerCtx.lineCap = 'round';
       markerCtx.lineJoin = 'round';
-      markerCtx.strokeStyle = '#d92d20';
-      markerCtx.lineWidth = 4;
     }
   }
 
   function clearMarker() {
     if (!markerCtx || !dom.markerCanvas) return;
-    const dpr = window.devicePixelRatio || 1;
     markerCtx.save();
     markerCtx.setTransform(1, 0, 0, 1, 0, 0);
     markerCtx.clearRect(0, 0, dom.markerCanvas.width, dom.markerCanvas.height);
@@ -604,7 +627,6 @@
       },
       onComplete: function (summaryData) {
         if (isShowingHint) return;
-        // Не считаем в автоплее
         if (autoplayActive) return;
 
         score += 100;
@@ -652,7 +674,7 @@
   }
 
   // ============================================================
-  // АВТОПЛЕЙ — прогон всей серии подряд
+  // АВТОПЛЕЙ
   // ============================================================
   function startAutoplay() {
     if (autoplayActive) {
@@ -673,7 +695,6 @@
       dom.autoplayIndicator.classList.add('active');
     }
 
-    // Запускаем с текущего
     autoplayLoop(myToken);
   }
 
@@ -691,7 +712,6 @@
     if (dom.autoplayIndicator) {
       dom.autoplayIndicator.classList.remove('active');
     }
-    // Возвращаем интерактивный квиз
     if (hwWriter && currentItems.length > 0) {
       try { hwWriter.cancelQuiz(); } catch (e) {}
       loadCharacter(currentIndex, { silent: true });
@@ -702,19 +722,16 @@
     while (autoplayActive && token === autoplayCancelToken) {
       const data = currentItems[currentIndex];
 
-      // Обновляем индикатор
       if (dom.autoplayProgress) {
         dom.autoplayProgress.textContent = (currentIndex + 1) + ' / ' + currentItems.length;
       }
 
-      // Меняем информацию
       dom.char.textContent = data.char;
       dom.pinyin.textContent = data.pinyin || getPinyin(data.char);
       dom.meaning.textContent = data.meaning || getCharMeaning(data.char);
       updateCharStatus();
       clearMarker();
 
-      // Создаём writer в режиме показа
       dom.hw.innerHTML = '';
       const size = Math.min(dom.hw.clientWidth, dom.hw.clientHeight) || 300;
 
@@ -745,52 +762,36 @@
       // Озвучка #1 — сразу
       speakChinese(data.char);
 
-      // Анимация + озвучка #2 посередине
+      // Анимация + озвучка #2 после неё
       await new Promise((resolve) => {
-        let spokeSecond = false;
-        const charData = hwWriter.getCharacterData ? null : null;
-
         hwWriter.animateCharacter({
           onComplete: () => {
-            // Озвучка #2 — ещё раз после завершения
             setTimeout(() => {
-              speakChinese(data.char);
-            }, 100);
+              if (autoplayActive && token === autoplayCancelToken) {
+                speakChinese(data.char);
+              }
+            }, 200);
             resolve();
           }
         });
-
-        // Озвучка #2 — середина анимации (приблизительно через 1.5 сек)
-        setTimeout(() => {
-          if (!spokeSecond && autoplayActive && token === autoplayCancelToken) {
-            spokeSecond = true;
-            // Не перебиваем первую — ждём минимум 1.5 сек
-            // Вторая озвучка уже запланирована после onComplete
-          }
-        }, 1500);
       });
 
       if (!autoplayActive || token !== autoplayCancelToken) break;
 
-      // Пауза перед следующим
       await new Promise((resolve) => {
-        autoplayDelayTimer = setTimeout(resolve, 1200);
+        autoplayDelayTimer = setTimeout(resolve, 1400);
       });
 
       if (!autoplayActive || token !== autoplayCancelToken) break;
 
-      // Следующий
       currentIndex = (currentIndex + 1) % currentItems.length;
 
-      // Небольшая пауза, чтобы дать браузеру отдышаться
       await new Promise((resolve) => {
         autoplayDelayTimer = setTimeout(resolve, 300);
       });
     }
 
-    // Завершили
     if (token === autoplayCancelToken && autoplayActive) {
-      // Прошли круг — стоп
       autoplayActive = false;
       if (dom.autoplayBtn) {
         dom.autoplayBtn.classList.remove('active');
@@ -804,7 +805,6 @@
         dom.instruction.textContent = '🎉 Автоплей завершён';
         dom.instruction.style.color = '#16835f';
       }
-      // Возвращаем интерактив
       loadCharacter(currentIndex, { silent: true });
     }
   }
@@ -978,7 +978,6 @@
     if (!dom.hw) return;
     Progress.load();
 
-    // Кнопки
     if (dom.hintBtn) dom.hintBtn.addEventListener('click', () => {
       if (autoplayActive) stopAutoplay();
       showHint();
@@ -995,12 +994,10 @@
     if (dom.markerToggle) dom.markerToggle.addEventListener('click', toggleMarker);
     if (dom.autoplayBtn) dom.autoplayBtn.addEventListener('click', startAutoplay);
 
-    // Озвучка по клику на иероглиф
     if (dom.char) dom.char.addEventListener('click', () => {
       if (currentItems.length > 0) speakChinese(currentItems[currentIndex].char);
     });
 
-    // Модалка
     if (dom.examplesClose) dom.examplesClose.addEventListener('click', () => {
       dom.examplesModal.classList.remove('show');
     });
@@ -1008,15 +1005,12 @@
       if (e.target === dom.examplesModal) dom.examplesModal.classList.remove('show');
     });
 
-    // Режимы
     document.querySelectorAll('.mode-btn').forEach(btn => {
       btn.addEventListener('click', () => switchMode(btn.dataset.mode));
     });
 
-    // Маркер
     initMarkerCanvas();
 
-    // Resize
     let rt = 0;
     window.addEventListener('resize', () => {
       clearTimeout(rt);
@@ -1028,22 +1022,18 @@
       }, 250);
     });
 
-    // Оффлайн
     const updateOnline = () => document.body.classList.toggle('offline', !navigator.onLine);
     window.addEventListener('online', updateOnline);
     window.addEventListener('offline', updateOnline);
     updateOnline();
 
-    // SW
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW:', err));
     }
 
-    // Старт
     switchMode('1');
     setInterval(updateStats, 60000);
 
-    // Останавливаем автоплей при уходе со страницы
     window.addEventListener('beforeunload', () => {
       autoplayActive = false;
       autoplayCancelToken++;
