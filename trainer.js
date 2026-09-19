@@ -8,11 +8,11 @@
   const REVIEW_INTERVALS = [0, 1, 2, 4, 7, 15, 30, 60, 120];
 
   // ============================================================
-  // ОЗВУЧКА — идентична рабочей версии из index.html
+  // ОЗВУЧКА: MP3 из Audio/ с ПРЕДЗАГРУЗКОЙ
   // ============================================================
   const AUDIO_DIR = 'Audio/';
   const AUDIO_PREFIX = 'cmn-';
-  const audioCache = new Map();
+  const audioCache = new Map();  // text → HTMLAudioElement (готовый)
 
   let zhVoice = null;
   function pickZhVoice() {
@@ -43,63 +43,102 @@
     return AUDIO_DIR + AUDIO_PREFIX + text + '.mp3';
   }
 
+  /**
+   * Предзагрузка MP3 — создаём Audio, дожидаемся canplaythrough,
+   * кладём в audioCache готовым к мгновенному воспроизведению.
+   * Возвращает Promise<boolean> — есть файл или нет.
+   */
+  function preloadAudio(text) {
+    return new Promise((resolve) => {
+      // Уже в кэше
+      const cached = audioCache.get(text);
+      if (cached && cached.ready) {
+        resolve(true);
+        return;
+      }
+
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.src = audioPathFor(text);
+
+      let resolved = false;
+      const done = (ok) => {
+        if (resolved) return;
+        resolved = true;
+        if (ok) {
+          audioCache.set(text, { ready: true, audio });
+        } else {
+          audioCache.set(text, { ready: false, audio: null });
+        }
+        resolve(ok);
+      };
+
+      audio.addEventListener('canplaythrough', () => done(true), { once: true });
+      audio.addEventListener('loadeddata', () => done(true), { once: true });
+      audio.addEventListener('error', () => done(false), { once: true });
+
+      // Таймаут на случай, если ни error, ни canplaythrough не придут
+      setTimeout(() => {
+        if (!resolved) {
+          // Проверяем — может, уже загружено
+          if (audio.readyState >= 2) done(true);
+          else done(false);
+        }
+      }, 3000);
+
+      try { audio.load(); } catch (e) { done(false); }
+    });
+  }
+
+  /**
+   * Мгновенное воспроизведение. Если файл не был предзагружен — 
+   * попробует загрузить и потом играет; если не удалось — браузер.
+   */
   function speakChinese(text, opts) {
     if (!text) return;
     opts = opts || {};
-    const key = text;
-    const cached = audioCache.get(key);
+    const cached = audioCache.get(text);
 
-    if (!opts.force && cached && cached.available === false) {
-      speakWithBrowser(text);
-      return;
-    }
-    if (cached && cached.audio) {
-      playAudio(cached.audio, text, key);
+    // Файл готов — играем мгновенно
+    if (cached && cached.ready && cached.audio) {
+      playAudio(cached.audio, text);
       return;
     }
 
-    const audio = new Audio(audioPathFor(text));
-    audio.preload = 'auto';
-    let resolved = false;
+    // Известно, что файла нет — сразу браузер
+    if (cached && cached.ready === false) {
+      if (!opts.onlyMp3) speakWithBrowser(text);
+      return;
+    }
 
-    const onError = () => {
-      if (resolved) return;
-      resolved = true;
-      audioCache.set(key, { available: false, audio: null });
-      speakWithBrowser(text);
-    };
-    const onCanPlay = () => {
-      if (resolved) return;
-      resolved = true;
-      audioCache.set(key, { available: true, audio });
-      playAudio(audio, text, key);
-    };
-
-    audio.addEventListener('error', onError, { once: true });
-    audio.addEventListener('canplaythrough', onCanPlay, { once: true });
-    audio.addEventListener('loadeddata', onCanPlay, { once: true });
-
-    try { audio.load(); } catch (e) { onError(); }
+    // Ещё не проверяли — грузим на месте
+    preloadAudio(text).then((ok) => {
+      if (ok) {
+        const c = audioCache.get(text);
+        if (c && c.audio) playAudio(c.audio, text);
+      } else {
+        if (!opts.onlyMp3) speakWithBrowser(text);
+      }
+    });
   }
 
-  function playAudio(audio, text, key) {
+  function playAudio(audio, text) {
     try {
       audio.currentTime = 0;
       const p = audio.play();
       if (p && p.catch) {
         p.catch(() => {
-          audioCache.set(key, { available: false, audio: null });
+          // Плеер не смог — браузер
           speakWithBrowser(text);
         });
       }
     } catch (e) {
-      audioCache.set(key, { available: false, audio: null });
       speakWithBrowser(text);
     }
   }
 
-  // Экспортируем наружу — вдруг пригодится
   window.speakChinese = speakChinese;
+  window.preloadAudio = preloadAudio;
 
   // ============================================================
   // ДОСТУП К БАЗЕ
@@ -375,12 +414,12 @@
   }
 
   // ============================================================
-  // МАРКЕР — толстый + белая обводка + красная линия
+  // МАРКЕР
   // ============================================================
-  const MARKER_COLOR = '#dc2626';                 // яркий красный
-  const MARKER_WIDTH = 14;                        // толщина красной линии
-  const MARKER_OUTLINE_COLOR = 'rgba(255,255,255,0.95)'; // белая подложка
-  const MARKER_OUTLINE_WIDTH = 20;                // толщина подложки
+  const MARKER_COLOR = '#dc2626';
+  const MARKER_WIDTH = 14;
+  const MARKER_OUTLINE_COLOR = 'rgba(255,255,255,0.95)';
+  const MARKER_OUTLINE_WIDTH = 20;
 
   function initMarkerCanvas() {
     if (!dom.markerCanvas) return;
@@ -409,7 +448,6 @@
     }
 
     function drawSegment(x1, y1, x2, y2) {
-      // 1) белая подложка (шире)
       markerCtx.strokeStyle = MARKER_OUTLINE_COLOR;
       markerCtx.lineWidth = MARKER_OUTLINE_WIDTH;
       markerCtx.lineCap = 'round';
@@ -419,7 +457,6 @@
       markerCtx.lineTo(x2, y2);
       markerCtx.stroke();
 
-      // 2) красная линия поверх
       markerCtx.strokeStyle = MARKER_COLOR;
       markerCtx.lineWidth = MARKER_WIDTH;
       markerCtx.beginPath();
@@ -435,7 +472,6 @@
       const pos = getPos(e);
       lastX = pos.x;
       lastY = pos.y;
-      // Точка при касании (чтобы сразу появилась точка)
       drawSegment(pos.x, pos.y, pos.x + 0.1, pos.y + 0.1);
     }
 
@@ -448,7 +484,7 @@
       lastY = pos.y;
     }
 
-    function endDraw(e) {
+    function endDraw() {
       if (!markerActive) return;
       isDrawing = false;
     }
@@ -574,6 +610,9 @@
     updateCharStatus();
     clearMarker();
 
+    // ← Предзагрузка озвучки текущего иероглифа
+    if (data.char) preloadAudio(data.char);
+
     if (!opts.silent && dom.instruction) {
       dom.instruction.textContent = markerActive
         ? '🖊️ Маркер включён — рисуйте поверх иероглифа'
@@ -658,11 +697,28 @@
     loadCharacter(currentIndex);
   }
 
-  function showHint() {
+  // ============================================================
+  // ПОДСКАЗКА (👁️) — с предзагрузкой mp3
+  // ============================================================
+  async function showHint() {
     if (!hwWriter || isShowingHint) return;
+    if (currentItems.length === 0) return;
+
     isShowingHint = true;
-    if (currentItems.length > 0) speakChinese(currentItems[currentIndex].char);
-    if (dom.instruction) dom.instruction.textContent = '👀 Смотрите анимацию...';
+    const char = currentItems[currentIndex].char;
+
+    // Предзагружаем mp3 ПЕРЕД анимацией
+    if (dom.instruction) dom.instruction.textContent = '👀 Загрузка озвучки...';
+    await preloadAudio(char);
+
+    // Теперь играем — мгновенно
+    speakChinese(char);
+
+    if (dom.instruction) {
+      dom.instruction.textContent = '👀 Смотрите анимацию и слушайте...';
+      dom.instruction.style.color = '#8a4a2a';
+    }
+
     hwWriter.animateCharacter({
       onComplete: function () {
         setTimeout(function () {
@@ -674,9 +730,9 @@
   }
 
   // ============================================================
-  // АВТОПЛЕЙ
+  // АВТОПЛЕЙ — с предзагрузкой ВСЕХ mp3
   // ============================================================
-  function startAutoplay() {
+  async function startAutoplay() {
     if (autoplayActive) {
       stopAutoplay();
       return;
@@ -695,7 +751,27 @@
       dom.autoplayIndicator.classList.add('active');
     }
 
+    // Предзагружаем mp3 для текущего и следующих 5 иероглифов
+    await preloadUpcoming(currentIndex);
+
+    if (!autoplayActive || myToken !== autoplayCancelToken) return;
+
     autoplayLoop(myToken);
+  }
+
+  /**
+   * Предзагрузить mp3 для N иероглифов вперёд (без остановки автоплея)
+   */
+  async function preloadUpcoming(startIndex) {
+    const batch = 6;
+    const promises = [];
+    for (let i = 0; i < batch; i++) {
+      const idx = (startIndex + i) % currentItems.length;
+      const ch = currentItems[idx].char;
+      if (ch) promises.push(preloadAudio(ch));
+    }
+    // Ждём завершения всех (или почти всех)
+    await Promise.all(promises);
   }
 
   function stopAutoplay() {
@@ -759,13 +835,19 @@
         dom.instruction.style.color = '#2563eb';
       }
 
-      // Озвучка #1 — сразу
+      // ← Убедимся, что mp3 готов (обычно уже предзагружен)
+      await preloadAudio(data.char);
+
+      if (!autoplayActive || token !== autoplayCancelToken) break;
+
+      // Озвучка #1 — сразу (mp3 мгновенно)
       speakChinese(data.char);
 
-      // Анимация + озвучка #2 после неё
+      // Анимация
       await new Promise((resolve) => {
         hwWriter.animateCharacter({
           onComplete: () => {
+            // Озвучка #2 — после завершения
             setTimeout(() => {
               if (autoplayActive && token === autoplayCancelToken) {
                 speakChinese(data.char);
@@ -778,13 +860,18 @@
 
       if (!autoplayActive || token !== autoplayCancelToken) break;
 
+      // Пауза перед следующим
       await new Promise((resolve) => {
         autoplayDelayTimer = setTimeout(resolve, 1400);
       });
 
       if (!autoplayActive || token !== autoplayCancelToken) break;
 
+      // Следующий
       currentIndex = (currentIndex + 1) % currentItems.length;
+
+      // ← Фоновая предзагрузка следующих 6
+      preloadUpcoming(currentIndex);
 
       await new Promise((resolve) => {
         autoplayDelayTimer = setTimeout(resolve, 300);
@@ -857,7 +944,8 @@
             '</div>' +
             '<div style="font-size:20px;opacity:0.5;">🔊</div>';
           item.addEventListener('click', function () {
-            speakChinese(ex.word);
+            // Предзагружаем и играем
+            preloadAudio(ex.word).then(() => speakChinese(ex.word));
             item.style.background = '#e6f4ef';
             setTimeout(function () { item.style.background = ''; }, 300);
           });
@@ -904,6 +992,9 @@
     if (dom.category) dom.category.textContent = 'HSK ' + level + ' · ' + chars.length + ' знаков';
     loadCharacter(0);
     updateStats();
+
+    // Фоновая предзагрузка первых 10 mp3
+    setTimeout(() => preloadUpcoming(0), 500);
   }
 
   function startDueReview() {
@@ -924,6 +1015,7 @@
     if (dom.category) dom.category.textContent = '🔄 Повторение · ' + due.length;
     loadCharacter(0);
     updateStats();
+    setTimeout(() => preloadUpcoming(0), 500);
     return true;
   }
 
@@ -945,6 +1037,7 @@
     if (dom.category) dom.category.textContent = '🎯 Слабые места · ' + weak.length;
     loadCharacter(0);
     updateStats();
+    setTimeout(() => preloadUpcoming(0), 500);
     return true;
   }
 
@@ -995,7 +1088,10 @@
     if (dom.autoplayBtn) dom.autoplayBtn.addEventListener('click', startAutoplay);
 
     if (dom.char) dom.char.addEventListener('click', () => {
-      if (currentItems.length > 0) speakChinese(currentItems[currentIndex].char);
+      if (currentItems.length > 0) {
+        const ch = currentItems[currentIndex].char;
+        preloadAudio(ch).then(() => speakChinese(ch));
+      }
     });
 
     if (dom.examplesClose) dom.examplesClose.addEventListener('click', () => {
