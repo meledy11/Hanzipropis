@@ -1,5 +1,6 @@
 /* trainer.js — Тренажёр каллиграфии с маркером и автоплеем
    Зависимости: dictionary-data.js (window.HSK_DICT), pinyinPro, HanziWriter
+   Озвучка: ОДНА на иероглиф, MP3 из Audio/ с гарантированной предзагрузкой.
 */
 (function () {
   'use strict';
@@ -8,11 +9,11 @@
   const REVIEW_INTERVALS = [0, 1, 2, 4, 7, 15, 30, 60, 120];
 
   // ============================================================
-  // ОЗВУЧКА: MP3 из Audio/ с ПРЕДЗАГРУЗКОЙ
+  // ОЗВУЧКА — MP3 + предзагрузка + ожидание окончания
   // ============================================================
   const AUDIO_DIR = 'Audio/';
   const AUDIO_PREFIX = 'cmn-';
-  const audioCache = new Map();  // text → HTMLAudioElement (готовый)
+  const audioCache = new Map(); // text → { ready, audio }
 
   let zhVoice = null;
   function pickZhVoice() {
@@ -43,19 +44,12 @@
     return AUDIO_DIR + AUDIO_PREFIX + text + '.mp3';
   }
 
-  /**
-   * Предзагрузка MP3 — создаём Audio, дожидаемся canplaythrough,
-   * кладём в audioCache готовым к мгновенному воспроизведению.
-   * Возвращает Promise<boolean> — есть файл или нет.
-   */
+  // Предзагрузка — резолвится ТОЛЬКО когда файл готов играть
   function preloadAudio(text) {
     return new Promise((resolve) => {
-      // Уже в кэше
       const cached = audioCache.get(text);
-      if (cached && cached.ready) {
-        resolve(true);
-        return;
-      }
+      if (cached && cached.ready === true) { resolve(true); return; }
+      if (cached && cached.ready === false) { resolve(false); return; }
 
       const audio = new Audio();
       audio.preload = 'auto';
@@ -65,11 +59,7 @@
       const done = (ok) => {
         if (resolved) return;
         resolved = true;
-        if (ok) {
-          audioCache.set(text, { ready: true, audio });
-        } else {
-          audioCache.set(text, { ready: false, audio: null });
-        }
+        audioCache.set(text, { ready: ok, audio: ok ? audio : null });
         resolve(ok);
       };
 
@@ -77,67 +67,77 @@
       audio.addEventListener('loadeddata', () => done(true), { once: true });
       audio.addEventListener('error', () => done(false), { once: true });
 
-      // Таймаут на случай, если ни error, ни canplaythrough не придут
       setTimeout(() => {
         if (!resolved) {
-          // Проверяем — может, уже загружено
           if (audio.readyState >= 2) done(true);
           else done(false);
         }
-      }, 3000);
+      }, 4000);
 
       try { audio.load(); } catch (e) { done(false); }
     });
   }
 
-  /**
-   * Мгновенное воспроизведение. Если файл не был предзагружен — 
-   * попробует загрузить и потом играет; если не удалось — браузер.
-   */
-  function speakChinese(text, opts) {
-    if (!text) return;
-    opts = opts || {};
-    const cached = audioCache.get(text);
+  // Проиграть MP3 и дождаться окончания. Если MP3 нет — браузер.
+  function speakAndWait(text) {
+    return new Promise((resolve) => {
+      if (!text) { resolve(); return; }
 
-    // Файл готов — играем мгновенно
-    if (cached && cached.ready && cached.audio) {
-      playAudio(cached.audio, text);
-      return;
-    }
+      const cached = audioCache.get(text);
 
-    // Известно, что файла нет — сразу браузер
-    if (cached && cached.ready === false) {
-      if (!opts.onlyMp3) speakWithBrowser(text);
-      return;
-    }
+      if (cached && cached.ready && cached.audio) {
+        const audio = cached.audio;
+        try {
+          audio.currentTime = 0;
+          const onEnd = () => {
+            audio.removeEventListener('ended', onEnd);
+            audio.removeEventListener('error', onErr);
+            resolve();
+          };
+          const onErr = () => {
+            audio.removeEventListener('ended', onEnd);
+            audio.removeEventListener('error', onErr);
+            speakWithBrowser(text);
+            setTimeout(resolve, 1000);
+          };
+          audio.addEventListener('ended', onEnd, { once: true });
+          audio.addEventListener('error', onErr, { once: true });
 
-    // Ещё не проверяли — грузим на месте
-    preloadAudio(text).then((ok) => {
-      if (ok) {
-        const c = audioCache.get(text);
-        if (c && c.audio) playAudio(c.audio, text);
-      } else {
-        if (!opts.onlyMp3) speakWithBrowser(text);
+          const p = audio.play();
+          if (p && p.catch) {
+            p.catch(() => {
+              audio.removeEventListener('ended', onEnd);
+              audio.removeEventListener('error', onErr);
+              speakWithBrowser(text);
+              setTimeout(resolve, 1000);
+            });
+          }
+        } catch (e) {
+          speakWithBrowser(text);
+          setTimeout(resolve, 1000);
+        }
+        return;
       }
+
+      // MP3 нет — загружаем и пробуем снова
+      preloadAudio(text).then((ok) => {
+        if (ok) {
+          speakAndWait(text).then(resolve);
+        } else {
+          speakWithBrowser(text);
+          setTimeout(resolve, 1000);
+        }
+      });
     });
   }
 
-  function playAudio(audio, text) {
-    try {
-      audio.currentTime = 0;
-      const p = audio.play();
-      if (p && p.catch) {
-        p.catch(() => {
-          // Плеер не смог — браузер
-          speakWithBrowser(text);
-        });
-      }
-    } catch (e) {
-      speakWithBrowser(text);
-    }
+  // "Fire and forget" — не ждём
+  function speakChinese(text) {
+    preloadAudio(text).then(() => speakAndWait(text));
   }
 
   window.speakChinese = speakChinese;
+  window.speakAndWait = speakAndWait;
   window.preloadAudio = preloadAudio;
 
   // ============================================================
@@ -367,13 +367,11 @@
   let isShowingHint = false;
   let dom = {};
 
-  // Маркер
   let markerCtx = null;
   let isDrawing = false;
   let markerActive = false;
   let lastX = 0, lastY = 0;
 
-  // Автоплей
   let autoplayActive = false;
   let autoplayCancelToken = 0;
   let autoplayDelayTimer = null;
@@ -425,22 +423,14 @@
     if (!dom.markerCanvas) return;
     resizeMarkerCanvas();
     markerCtx = dom.markerCanvas.getContext('2d');
-
     const canvas = dom.markerCanvas;
 
     function getPos(e) {
       const rect = canvas.getBoundingClientRect();
       let clientX, clientY;
-      if (e.touches && e.touches[0]) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-      } else if (e.changedTouches && e.changedTouches[0]) {
-        clientX = e.changedTouches[0].clientX;
-        clientY = e.changedTouches[0].clientY;
-      } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
-      }
+      if (e.touches && e.touches[0]) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+      else if (e.changedTouches && e.changedTouches[0]) { clientX = e.changedTouches[0].clientX; clientY = e.changedTouches[0].clientY; }
+      else { clientX = e.clientX; clientY = e.clientY; }
       return {
         x: (clientX - rect.left) * (canvas.width / rect.width),
         y: (clientY - rect.top) * (canvas.height / rect.height)
@@ -470,8 +460,7 @@
       e.preventDefault();
       isDrawing = true;
       const pos = getPos(e);
-      lastX = pos.x;
-      lastY = pos.y;
+      lastX = pos.x; lastY = pos.y;
       drawSegment(pos.x, pos.y, pos.x + 0.1, pos.y + 0.1);
     }
 
@@ -480,20 +469,15 @@
       e.preventDefault();
       const pos = getPos(e);
       drawSegment(lastX, lastY, pos.x, pos.y);
-      lastX = pos.x;
-      lastY = pos.y;
+      lastX = pos.x; lastY = pos.y;
     }
 
-    function endDraw() {
-      if (!markerActive) return;
-      isDrawing = false;
-    }
+    function endDraw() { if (!markerActive) return; isDrawing = false; }
 
     canvas.addEventListener('mousedown', startDraw);
     canvas.addEventListener('mousemove', moveDraw);
     canvas.addEventListener('mouseup', endDraw);
     canvas.addEventListener('mouseleave', endDraw);
-
     canvas.addEventListener('touchstart', startDraw, { passive: false });
     canvas.addEventListener('touchmove', moveDraw, { passive: false });
     canvas.addEventListener('touchend', endDraw);
@@ -523,9 +507,7 @@
 
   function toggleMarker() {
     markerActive = !markerActive;
-    if (dom.markerCanvas) {
-      dom.markerCanvas.classList.toggle('active', markerActive);
-    }
+    if (dom.markerCanvas) dom.markerCanvas.classList.toggle('active', markerActive);
     if (dom.markerToggle) {
       dom.markerToggle.classList.toggle('active', markerActive);
       dom.markerToggle.innerHTML = markerActive ? '🖊️ Маркер ВКЛ' : '🖊️ Маркер';
@@ -558,19 +540,10 @@
     const data = currentItems[currentIndex];
     const p = Progress.get(data.char);
     dom.status.classList.remove('new', 'learning', 'due', 'mastered');
-    if (p.mastered) {
-      dom.status.classList.add('mastered');
-      dom.status.textContent = '✓ ВЫУЧЕН';
-    } else if (p.attempts > 0 && p.nextReview <= Date.now()) {
-      dom.status.classList.add('due');
-      dom.status.textContent = '🔄 ПОВТОРИТЬ';
-    } else if (p.attempts > 0) {
-      dom.status.classList.add('learning');
-      dom.status.textContent = '📖 ИЗУЧАЕМ';
-    } else {
-      dom.status.classList.add('new');
-      dom.status.textContent = '✨ НОВЫЙ';
-    }
+    if (p.mastered) { dom.status.classList.add('mastered'); dom.status.textContent = '✓ ВЫУЧЕН'; }
+    else if (p.attempts > 0 && p.nextReview <= Date.now()) { dom.status.classList.add('due'); dom.status.textContent = '🔄 ПОВТОРИТЬ'; }
+    else if (p.attempts > 0) { dom.status.classList.add('learning'); dom.status.textContent = '📖 ИЗУЧАЕМ'; }
+    else { dom.status.classList.add('new'); dom.status.textContent = '✨ НОВЫЙ'; }
   }
 
   function updateStats() {
@@ -610,7 +583,6 @@
     updateCharStatus();
     clearMarker();
 
-    // ← Предзагрузка озвучки текущего иероглифа
     if (data.char) preloadAudio(data.char);
 
     if (!opts.silent && dom.instruction) {
@@ -624,19 +596,12 @@
     const size = Math.min(dom.hw.clientWidth, dom.hw.clientHeight) || 300;
 
     hwWriter = HanziWriter.create(dom.hw, data.char, {
-      width: size,
-      height: size,
-      padding: 15,
-      showOutline: true,
-      strokeAnimationSpeed: 1.2,
-      delayBetweenStrokes: 500,
+      width: size, height: size, padding: 15,
+      showOutline: true, strokeAnimationSpeed: 1.2, delayBetweenStrokes: 500,
       drawingWidth: Math.max(15, size * 0.06),
       showCharacter: false,
-      highlightColor: '#d92d20',
-      outlineColor: '#d9e0ea',
-      drawingColor: '#1a1f2b',
-      showHintAfterMisses: 1,
-      highlightOnComplete: true
+      highlightColor: '#d92d20', outlineColor: '#d9e0ea', drawingColor: '#1a1f2b',
+      showHintAfterMisses: 1, highlightOnComplete: true
     });
 
     hwWriter.getCharacterData().then(function (charData) {
@@ -667,17 +632,11 @@
       onComplete: function (summaryData) {
         if (isShowingHint) return;
         if (autoplayActive) return;
-
         score += 100;
         const accuracy = summaryData.totalMistakes === 0 ? 100 :
           Math.max(0, Math.round((1 - summaryData.totalMistakes / currentStrokesTotal) * 100));
-
-        if (summaryData.totalMistakes === 0) {
-          Progress.recordSuccess(data.char, accuracy);
-        } else {
-          Progress.recordMistake(data.char, summaryData.totalMistakes);
-        }
-
+        if (summaryData.totalMistakes === 0) Progress.recordSuccess(data.char, accuracy);
+        else Progress.recordMistake(data.char, summaryData.totalMistakes);
         updateCharStatus();
         updateStats();
         if (dom.instruction) {
@@ -698,7 +657,7 @@
   }
 
   // ============================================================
-  // ПОДСКАЗКА (👁️) — с предзагрузкой mp3
+  // ПОДСКАЗКА — ОДНА озвучка
   // ============================================================
   async function showHint() {
     if (!hwWriter || isShowingHint) return;
@@ -707,36 +666,44 @@
     isShowingHint = true;
     const char = currentItems[currentIndex].char;
 
-    // Предзагружаем mp3 ПЕРЕД анимацией
     if (dom.instruction) dom.instruction.textContent = '👀 Загрузка озвучки...';
     await preloadAudio(char);
-
-    // Теперь играем — мгновенно
-    speakChinese(char);
 
     if (dom.instruction) {
       dom.instruction.textContent = '👀 Смотрите анимацию и слушайте...';
       dom.instruction.style.color = '#8a4a2a';
     }
 
-    hwWriter.animateCharacter({
-      onComplete: function () {
-        setTimeout(function () {
-          isShowingHint = false;
-          loadCharacter(currentIndex);
-        }, 800);
-      }
+    // Озвучка + анимация параллельно
+    const speech = speakAndWait(char);
+    const anim = new Promise((resolve) => {
+      hwWriter.animateCharacter({ onComplete: () => resolve() });
     });
+
+    await Promise.all([speech, anim]);
+
+    setTimeout(function () {
+      isShowingHint = false;
+      loadCharacter(currentIndex);
+    }, 400);
   }
 
   // ============================================================
-  // АВТОПЛЕЙ — с предзагрузкой ВСЕХ mp3
+  // АВТОПЛЕЙ — ОДНА озвучка на иероглиф
   // ============================================================
-  async function startAutoplay() {
-    if (autoplayActive) {
-      stopAutoplay();
-      return;
+  async function preloadUpcoming(startIndex) {
+    const batch = 6;
+    const promises = [];
+    for (let i = 0; i < batch; i++) {
+      const idx = (startIndex + i) % currentItems.length;
+      const ch = currentItems[idx].char;
+      if (ch) promises.push(preloadAudio(ch));
     }
+    await Promise.all(promises);
+  }
+
+  async function startAutoplay() {
+    if (autoplayActive) { stopAutoplay(); return; }
     if (currentItems.length === 0) return;
 
     autoplayActive = true;
@@ -751,27 +718,16 @@
       dom.autoplayIndicator.classList.add('active');
     }
 
-    // Предзагружаем mp3 для текущего и следующих 5 иероглифов
+    // Предзагрузка 6 иероглифов ДО старта
+    if (dom.instruction) {
+      dom.instruction.textContent = '⏳ Загрузка озвучки...';
+      dom.instruction.style.color = '#2563eb';
+    }
     await preloadUpcoming(currentIndex);
 
     if (!autoplayActive || myToken !== autoplayCancelToken) return;
 
     autoplayLoop(myToken);
-  }
-
-  /**
-   * Предзагрузить mp3 для N иероглифов вперёд (без остановки автоплея)
-   */
-  async function preloadUpcoming(startIndex) {
-    const batch = 6;
-    const promises = [];
-    for (let i = 0; i < batch; i++) {
-      const idx = (startIndex + i) % currentItems.length;
-      const ch = currentItems[idx].char;
-      if (ch) promises.push(preloadAudio(ch));
-    }
-    // Ждём завершения всех (или почти всех)
-    await Promise.all(promises);
   }
 
   function stopAutoplay() {
@@ -785,9 +741,7 @@
       dom.autoplayBtn.classList.remove('active');
       dom.autoplayBtn.innerHTML = '▶️ Авто';
     }
-    if (dom.autoplayIndicator) {
-      dom.autoplayIndicator.classList.remove('active');
-    }
+    if (dom.autoplayIndicator) dom.autoplayIndicator.classList.remove('active');
     if (hwWriter && currentItems.length > 0) {
       try { hwWriter.cancelQuiz(); } catch (e) {}
       loadCharacter(currentIndex, { silent: true });
@@ -813,17 +767,11 @@
 
       try {
         hwWriter = HanziWriter.create(dom.hw, data.char, {
-          width: size,
-          height: size,
-          padding: 15,
-          showOutline: true,
-          strokeAnimationSpeed: 0.8,
-          delayBetweenStrokes: 400,
+          width: size, height: size, padding: 15,
+          showOutline: true, strokeAnimationSpeed: 0.8, delayBetweenStrokes: 400,
           drawingWidth: Math.max(15, size * 0.06),
           showCharacter: false,
-          highlightColor: '#d92d20',
-          outlineColor: '#d9e0ea',
-          drawingColor: '#1a1f2b'
+          highlightColor: '#d92d20', outlineColor: '#d9e0ea', drawingColor: '#1a1f2b'
         });
       } catch (e) {
         console.warn('Autoplay: ошибка создания writer', e);
@@ -831,50 +779,36 @@
       }
 
       if (dom.instruction) {
-        dom.instruction.textContent = '▶️ Автоплей: смотрите и слушайте (' + (currentIndex + 1) + '/' + currentItems.length + ')';
+        dom.instruction.textContent = '▶️ Автоплей (' + (currentIndex + 1) + '/' + currentItems.length + ')';
         dom.instruction.style.color = '#2563eb';
       }
 
-      // ← Убедимся, что mp3 готов (обычно уже предзагружен)
+      // Ждём MP3 ТЕКУЩЕГО
       await preloadAudio(data.char);
-
       if (!autoplayActive || token !== autoplayCancelToken) break;
 
-      // Озвучка #1 — сразу (mp3 мгновенно)
-      speakChinese(data.char);
-
-      // Анимация
-      await new Promise((resolve) => {
-        hwWriter.animateCharacter({
-          onComplete: () => {
-            // Озвучка #2 — после завершения
-            setTimeout(() => {
-              if (autoplayActive && token === autoplayCancelToken) {
-                speakChinese(data.char);
-              }
-            }, 200);
-            resolve();
-          }
-        });
+      // ========== ОДНА ОЗВУЧКА + АНИМАЦИЯ ПАРАЛЛЕЛЬНО ==========
+      const speech = speakAndWait(data.char);
+      const anim = new Promise((resolve) => {
+        hwWriter.animateCharacter({ onComplete: () => resolve() });
       });
 
+      await Promise.all([speech, anim]);
       if (!autoplayActive || token !== autoplayCancelToken) break;
 
       // Пауза перед следующим
       await new Promise((resolve) => {
-        autoplayDelayTimer = setTimeout(resolve, 1400);
+        autoplayDelayTimer = setTimeout(resolve, 800);
       });
-
       if (!autoplayActive || token !== autoplayCancelToken) break;
 
-      // Следующий
       currentIndex = (currentIndex + 1) % currentItems.length;
 
-      // ← Фоновая предзагрузка следующих 6
+      // Фоновая предзагрузка
       preloadUpcoming(currentIndex);
 
       await new Promise((resolve) => {
-        autoplayDelayTimer = setTimeout(resolve, 300);
+        autoplayDelayTimer = setTimeout(resolve, 200);
       });
     }
 
@@ -884,9 +818,7 @@
         dom.autoplayBtn.classList.remove('active');
         dom.autoplayBtn.innerHTML = '▶️ Авто';
       }
-      if (dom.autoplayIndicator) {
-        dom.autoplayIndicator.classList.remove('active');
-      }
+      if (dom.autoplayIndicator) dom.autoplayIndicator.classList.remove('active');
       showFloating('🎉 Круг завершён!');
       if (dom.instruction) {
         dom.instruction.textContent = '🎉 Автоплей завершён';
@@ -944,8 +876,7 @@
             '</div>' +
             '<div style="font-size:20px;opacity:0.5;">🔊</div>';
           item.addEventListener('click', function () {
-            // Предзагружаем и играем
-            preloadAudio(ex.word).then(() => speakChinese(ex.word));
+            preloadAudio(ex.word).then(() => speakAndWait(ex.word));
             item.style.background = '#e6f4ef';
             setTimeout(function () { item.style.background = ''; }, 300);
           });
@@ -992,9 +923,7 @@
     if (dom.category) dom.category.textContent = 'HSK ' + level + ' · ' + chars.length + ' знаков';
     loadCharacter(0);
     updateStats();
-
-    // Фоновая предзагрузка первых 10 mp3
-    setTimeout(() => preloadUpcoming(0), 500);
+    setTimeout(() => preloadUpcoming(0), 400);
   }
 
   function startDueReview() {
@@ -1015,7 +944,7 @@
     if (dom.category) dom.category.textContent = '🔄 Повторение · ' + due.length;
     loadCharacter(0);
     updateStats();
-    setTimeout(() => preloadUpcoming(0), 500);
+    setTimeout(() => preloadUpcoming(0), 400);
     return true;
   }
 
@@ -1037,7 +966,7 @@
     if (dom.category) dom.category.textContent = '🎯 Слабые места · ' + weak.length;
     loadCharacter(0);
     updateStats();
-    setTimeout(() => preloadUpcoming(0), 500);
+    setTimeout(() => preloadUpcoming(0), 400);
     return true;
   }
 
@@ -1050,11 +979,9 @@
 
   function switchMode(mode) {
     setActiveMode(mode);
-    if (mode === 'due') {
-      startDueReview();
-    } else if (mode === 'weak') {
-      startWeakSpots();
-    } else {
+    if (mode === 'due') startDueReview();
+    else if (mode === 'weak') startWeakSpots();
+    else {
       const lvl = parseInt(mode, 10);
       if (lvl >= 1 && lvl <= 5) loadCategory(lvl);
     }
@@ -1090,7 +1017,7 @@
     if (dom.char) dom.char.addEventListener('click', () => {
       if (currentItems.length > 0) {
         const ch = currentItems[currentIndex].char;
-        preloadAudio(ch).then(() => speakChinese(ch));
+        preloadAudio(ch).then(() => speakAndWait(ch));
       }
     });
 
