@@ -64,6 +64,7 @@
       width: 40px; height: 40px; min-height: 40px;
       border: 1px solid var(--line); border-radius: 10px;
       background: #fff; font-size: 20px; line-height: 1; padding: 0; color: var(--ink);
+      cursor: pointer;
     }
     .input-wrap { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; }
     textarea {
@@ -97,13 +98,13 @@
     .tabs {
       position: sticky; top: calc(env(safe-area-inset-top) + 108px); z-index: 25;
       display: grid; grid-template-columns: repeat(7, 1fr);
-      gap: 4px; margin: 10px 12px 0; padding: 4px;
+      gap: 3px; margin: 10px 12px 0; padding: 4px;
       background: #e6eaf1; border-radius: 12px;
     }
     .tab {
       min-height: 40px; border: none; border-radius: 9px;
       background: transparent; color: var(--muted);
-      font-size: 11px; font-weight: 700; cursor: pointer;
+      font-size: 10px; font-weight: 700; cursor: pointer;
       touch-action: manipulation; padding: 0 2px;
     }
     .tab.active { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(15,23,42,0.08); }
@@ -296,6 +297,10 @@
       <button id="saveFileBtn" type="button">В Файлы</button>
       <button id="importBtn" type="button">Импорт</button>
       <button id="downloadPrintBtn" type="button">HTML для печати</button>
+      <button id="menuDictBtn" type="button">📚 Словарь</button>
+      <button id="menuGrammarBtn" type="button">📖 Грамматика</button>
+      <button id="menuTrainerBtn" type="button">✍️ Тренажёр</button>
+      <button id="menuPrintBtn" type="button">🖨️ Печать</button>
     </div>
     <input id="importFile" type="file" accept="application/json,.json" hidden>
   </header>
@@ -307,7 +312,7 @@
     <button class="tab" id="tabHsk2" type="button">HSK2</button>
     <button class="tab" id="tabHsk3" type="button">HSK3</button>
     <button class="tab trainer" id="tabTrainer" type="button">Тренажёр ↗</button>
-    <button class="tab go" id="tabDict" type="button">Словарь ↗</button>
+    <button class="tab go" id="tabGrammar" type="button">Грам. ↗</button>
   </nav>
 
   <section class="pane active" id="pane-anim"><div class="cards" id="cards"></div></section>
@@ -367,7 +372,9 @@
   <div class="status-bar" id="status">Ожидание ввода</div>
 
   <script>
-    // ---------- ЭЛЕМЕНТЫ ----------
+    // ============================================================
+    // ЭЛЕМЕНТЫ
+    // ============================================================
     const input = document.getElementById('input');
     const makeBtn = document.getElementById('makeBtn');
     const menuBtn = document.getElementById('menuBtn');
@@ -388,7 +395,7 @@
     const tabHsk2 = document.getElementById('tabHsk2');
     const tabHsk3 = document.getElementById('tabHsk3');
     const tabTrainer = document.getElementById('tabTrainer');
-    const tabDict = document.getElementById('tabDict');
+    const tabGrammar = document.getElementById('tabGrammar');
     const paneAnim = document.getElementById('pane-anim');
     const panePrint = document.getElementById('pane-print');
     const paneHsk1 = document.getElementById('pane-hsk1');
@@ -404,7 +411,7 @@
     input.value = '而实候班哈举';
 
     // ============================================================
-    // ОЗВУЧКА: сначала MP3 из Audio/, если нет — браузерный голос
+    // ОЗВУЧКА: MP3 из Audio/ → fallback на браузерный голос
     // ============================================================
     const AUDIO_DIR = 'Audio/';
     const AUDIO_PREFIX = 'cmn-';
@@ -513,7 +520,9 @@
       return data;
     }
 
-    // ---------- SVG ----------
+    // ============================================================
+    // SVG-ОТРИСОВКА ЧЕРТ
+    // ============================================================
     function strokeSvg(strokes, active, mode) {
       const paths = strokes.map((d, i) => {
         let fill = '#e5e7eb';
@@ -532,7 +541,9 @@
       return cells;
     }
 
-    // ---------- КАРТОЧКА ----------
+    // ============================================================
+    // КАРТОЧКА
+    // ============================================================
     function cardHtml(item) {
       const on = selectedMap[item.char] !== false;
       const checkedAttr = on ? ' checked' : '';
@@ -558,7 +569,9 @@
       '</article>';
     }
 
-    // ---------- СТРОКА ПРОПИСИ ----------
+    // ============================================================
+    // СТРОКА ПРОПИСИ
+    // ============================================================
     function worksheetRow(item) {
       if (item.error) return '<div class="worksheet-row"><div class="left-info"><div class="print-pinyin">' + esc(item.pinyin) + '</div><div class="grid-cell big-char-cell"></div></div><div class="error-box">' + esc(item.char) + ' — черты не загружены</div></div>';
       return '<div class="worksheet-row">' +
@@ -576,7 +589,9 @@
       return 6.35;
     }
 
-    // ---------- ПЛЕЕР ----------
+    // ============================================================
+    // ПЛЕЕР
+    // ============================================================
     function createWriter(item, attempt = 0) {
       if (item.error) return;
       if (writers.has(item.char)) return;
@@ -596,7 +611,9 @@
       } catch (err) { console.warn('Ошибка плеера', item.char, err); }
     }
 
-    // ---------- ХРАНИЛИЩЕ ----------
+    // ============================================================
+    // ХРАНИЛИЩЕ
+    // ============================================================
     function currentState() { return { input: input.value, selectedMap, savedAt: new Date().toISOString() }; }
     function saveCurrent() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState())); } catch (e) {} }
     function loadSaved() {
@@ -608,7 +625,9 @@
       } catch (e) {}
     }
 
-    // ---------- ГЕНЕРАЦИЯ ----------
+    // ============================================================
+    // ГЕНЕРАЦИЯ
+    // ============================================================
     function selectedItemsForPrint(all) { return all.filter(it => selectedMap[it.char] !== false); }
 
     function renderCards(animationItems) {
@@ -665,7 +684,9 @@
     let timer = 0;
     function scheduleGenerate() { clearTimeout(timer); timer = setTimeout(() => { generate(); saveCurrent(); }, 420); }
 
-    // ---------- HSK ЛОГИКА (использует window.HSK_DICT) ----------
+    // ============================================================
+    // HSK ЛОГИКА (window.HSK_DICT из dictionary-data.js)
+    // ============================================================
     function getHskWords(level) {
       if (window.HSK_DICT && window.HSK_DICT['hsk' + level]) {
         return window.HSK_DICT['hsk' + level].words || [];
@@ -748,7 +769,9 @@
       if (changed) [1, 2, 3].forEach(renderHskGrid);
     }
 
-    // ---------- ЭКСПОРТ ----------
+    // ============================================================
+    // ЭКСПОРТ
+    // ============================================================
     function downloadBlob(name, text, type) {
       const blob = new Blob([text], { type });
       const url = URL.createObjectURL(blob);
@@ -787,7 +810,9 @@
       statusEl.textContent = 'HTML для печати скачан';
     }
 
-    // ---------- PDF ----------
+    // ============================================================
+    // PDF
+    // ============================================================
     function tok(d) { return d.match(/[MLQCZmlqcz]|-?\d*\.?\d+(?:e[-+]?\d+)?/g) || []; }
     function f(n) { return Number(n.toFixed(3)).toString(); }
     function pathToPdf(d) {
@@ -917,7 +942,9 @@
       statusEl.textContent = 'PDF скачан';
     }
 
-    // ---------- ВКЛАДКИ ----------
+    // ============================================================
+    // ВКЛАДКИ
+    // ============================================================
     function showTab(which) {
       const tabs = ['anim', 'print', 'hsk1', 'hsk2', 'hsk3'];
       const panes = { anim: paneAnim, print: panePrint, hsk1: paneHsk1, hsk2: paneHsk2, hsk3: paneHsk3 };
@@ -946,16 +973,37 @@
       location.href = 'trainer.html';
     });
 
-    // Словарь — переход
-    tabDict.addEventListener('click', () => {
+    // Грамматика — переход на отдельную страницу
+    tabGrammar.addEventListener('click', () => {
+      try { saveCurrent(); } catch (e) {}
+      location.href = 'grammar.html';
+    });
+
+    // ============================================================
+    // МЕНЮ
+    // ============================================================
+    menuBtn.addEventListener('click', () => menu.classList.toggle('open'));
+
+    document.getElementById('menuDictBtn').addEventListener('click', () => {
       try { saveCurrent(); } catch (e) {}
       location.href = 'dictionary.html';
     });
+    document.getElementById('menuGrammarBtn').addEventListener('click', () => {
+      try { saveCurrent(); } catch (e) {}
+      location.href = 'grammar.html';
+    });
+    document.getElementById('menuTrainerBtn').addEventListener('click', () => {
+      try { saveCurrent(); } catch (e) {}
+      location.href = 'trainer.html';
+    });
+    document.getElementById('menuPrintBtn').addEventListener('click', () => {
+      menu.classList.remove('open');
+      showTab('print');
+    });
 
-    // ---------- МЕНЮ ----------
-    menuBtn.addEventListener('click', () => menu.classList.toggle('open'));
-
-    // ---------- СОБЫТИЯ ----------
+    // ============================================================
+    // СОБЫТИЯ
+    // ============================================================
     input.addEventListener('input', () => { scheduleGenerate(); setTimeout(syncHskFromInput, 100); });
     makeBtn.addEventListener('click', () => { generate(); saveCurrent(); });
     saveBtn.addEventListener('click', () => { saveCurrent(); statusEl.textContent = 'Сохранено локально'; });
@@ -1016,13 +1064,17 @@
       if (action === 'reset') { w.showCharacter(); statusEl.textContent = 'Показан знак «' + ch + '»'; }
     });
 
-    // ---------- СТАРТ ----------
+    // ============================================================
+    // СТАРТ
+    // ============================================================
     loadSaved();
     [1, 2, 3].forEach(renderHskGrid);
     generate();
     showTab('anim');
 
-    // ---------- PWA / офлайн ----------
+    // ============================================================
+    // PWA / офлайн
+    // ============================================================
     (function () {
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -1058,8 +1110,11 @@
       window.addEventListener('appinstalled', () => { installBtn.style.display = 'none'; });
     })();
 
-    // Alt+D — словарь
+    // Горячие клавиши: Alt+G — грамматика, Alt+D — словарь, Alt+T — тренажёр
     document.addEventListener('keydown', e => {
+      if (e.altKey && (e.key === 'g' || e.key === 'G' || e.key === 'п' || e.key === 'П')) {
+        location.href = 'grammar.html';
+      }
       if (e.altKey && (e.key === 'd' || e.key === 'D' || e.key === 'в' || e.key === 'В')) {
         location.href = 'dictionary.html';
       }
