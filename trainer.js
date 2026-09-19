@@ -1,6 +1,6 @@
 /* trainer.js — Тренажёр каллиграфии с маркером и автоплеем
    Зависимости: dictionary-data.js (window.HSK_DICT), pinyinPro, HanziWriter
-   Озвучка: ОДНА на иероглиф, MP3 из Audio/ с гарантированной предзагрузкой.
+   Озвучка: Audio/cmn-{иероглиф или слово}.mp3 → браузер
 */
 (function () {
   'use strict';
@@ -9,11 +9,11 @@
   const REVIEW_INTERVALS = [0, 1, 2, 4, 7, 15, 30, 60, 120];
 
   // ============================================================
-  // ОЗВУЧКА — MP3 + предзагрузка + ожидание окончания
+  // ОЗВУЧКА
   // ============================================================
   const AUDIO_DIR = 'Audio/';
   const AUDIO_PREFIX = 'cmn-';
-  const audioCache = new Map(); // text → { ready, audio }
+  const audioCache = new Map();
 
   let zhVoice = null;
   function pickZhVoice() {
@@ -44,7 +44,7 @@
     return AUDIO_DIR + AUDIO_PREFIX + text + '.mp3';
   }
 
-  // Предзагрузка — резолвится ТОЛЬКО когда файл готов играть
+  // Проверка: есть ли mp3-файл для текста
   function preloadAudio(text) {
     return new Promise((resolve) => {
       const cached = audioCache.get(text);
@@ -72,72 +72,103 @@
           if (audio.readyState >= 2) done(true);
           else done(false);
         }
-      }, 4000);
+      }, 3500);
 
       try { audio.load(); } catch (e) { done(false); }
     });
   }
 
-  // Проиграть MP3 и дождаться окончания. Если MP3 нет — браузер.
-  function speakAndWait(text) {
+  // Найти mp3: сначала иероглиф, потом слово с ним
+  async function findAudioFor(char) {
+    if (await preloadAudio(char)) return { text: char, isWord: false };
+    const examples = getExamples(char);
+    for (const ex of examples) {
+      if (ex.word === char) continue;
+      if (await preloadAudio(ex.word)) return { text: ex.word, isWord: true };
+    }
+    return null;
+  }
+
+  // Проиграть конкретный mp3 + дождаться окончания
+  function playAndWait(audio, fallbackText) {
     return new Promise((resolve) => {
-      if (!text) { resolve(); return; }
+      try {
+        audio.currentTime = 0;
+        const onEnd = () => {
+          audio.removeEventListener('ended', onEnd);
+          audio.removeEventListener('error', onErr);
+          resolve();
+        };
+        const onErr = () => {
+          audio.removeEventListener('ended', onEnd);
+          audio.removeEventListener('error', onErr);
+          speakWithBrowser(fallbackText);
+          setTimeout(resolve, 900);
+        };
+        audio.addEventListener('ended', onEnd, { once: true });
+        audio.addEventListener('error', onErr, { once: true });
 
-      const cached = audioCache.get(text);
-
-      if (cached && cached.ready && cached.audio) {
-        const audio = cached.audio;
-        try {
-          audio.currentTime = 0;
-          const onEnd = () => {
+        const p = audio.play();
+        if (p && p.catch) {
+          p.catch(() => {
             audio.removeEventListener('ended', onEnd);
             audio.removeEventListener('error', onErr);
-            resolve();
-          };
-          const onErr = () => {
-            audio.removeEventListener('ended', onEnd);
-            audio.removeEventListener('error', onErr);
-            speakWithBrowser(text);
-            setTimeout(resolve, 1000);
-          };
-          audio.addEventListener('ended', onEnd, { once: true });
-          audio.addEventListener('error', onErr, { once: true });
-
-          const p = audio.play();
-          if (p && p.catch) {
-            p.catch(() => {
-              audio.removeEventListener('ended', onEnd);
-              audio.removeEventListener('error', onErr);
-              speakWithBrowser(text);
-              setTimeout(resolve, 1000);
-            });
-          }
-        } catch (e) {
-          speakWithBrowser(text);
-          setTimeout(resolve, 1000);
+            speakWithBrowser(fallbackText);
+            setTimeout(resolve, 900);
+          });
         }
-        return;
+      } catch (e) {
+        speakWithBrowser(fallbackText);
+        setTimeout(resolve, 900);
       }
-
-      // MP3 нет — загружаем и пробуем снова
-      preloadAudio(text).then((ok) => {
-        if (ok) {
-          speakAndWait(text).then(resolve);
-        } else {
-          speakWithBrowser(text);
-          setTimeout(resolve, 1000);
-        }
-      });
     });
   }
 
-  // "Fire and forget" — не ждём
-  function speakChinese(text) {
-    preloadAudio(text).then(() => speakAndWait(text));
+  // Озвучить слово (для примеров, HSK)
+  async function speakWord(word) {
+    if (!word) return;
+    if (!await preloadAudio(word)) { speakWithBrowser(word); return; }
+    const c = audioCache.get(word);
+    if (c && c.ready && c.audio) {
+      await playAndWait(c.audio, word);
+    } else {
+      speakWithBrowser(word);
+    }
   }
 
+  // Озвучить иероглиф (иероглиф → слово → браузер)
+  async function speakBestForChar(char) {
+    if (!char) return;
+    const found = await findAudioFor(char);
+    if (!found) {
+      speakWithBrowser(char);
+      await new Promise(r => setTimeout(r, 900));
+      return;
+    }
+    const c = audioCache.get(found.text);
+    if (c && c.ready && c.audio) {
+      await playAndWait(c.audio, found.text);
+    } else {
+      speakWithBrowser(found.text);
+      await new Promise(r => setTimeout(r, 900));
+    }
+  }
+
+  // Fire-and-forget
+  function speakChinese(text) {
+    if (!text) return;
+    if (/^\p{Script=Han}$/u.test(text)) {
+      speakBestForChar(text);
+    } else {
+      speakWord(text);
+    }
+  }
+
+  // Экспорт
   window.speakChinese = speakChinese;
-  window.speakAndWait = speakAndWait;
+  window.speakWord = speakWord;
+  window.speakBestForChar = speakBestForChar;
+  window.findAudioFor = findAudioFor;
   window.preloadAudio = preloadAudio;
 
   // ============================================================
@@ -318,7 +349,7 @@
     for (const lvl of getLevels()) {
       const d = getLevel(lvl);
       d.words.forEach(word => {
-        if (word.includes(char) && !seen.has(word) && examples.length < 20) {
+        if (word.includes(char) && !seen.has(word) && examples.length < 30) {
           seen.add(word);
           examples.push({
             word,
@@ -412,7 +443,7 @@
   }
 
   // ============================================================
-  // МАРКЕР
+  // МАРКЕР — толстый + контрастный
   // ============================================================
   const MARKER_COLOR = '#dc2626';
   const MARKER_WIDTH = 14;
@@ -583,7 +614,7 @@
     updateCharStatus();
     clearMarker();
 
-    if (data.char) preloadAudio(data.char);
+    if (data.char) findAudioFor(data.char);
 
     if (!opts.silent && dom.instruction) {
       dom.instruction.textContent = markerActive
@@ -657,7 +688,7 @@
   }
 
   // ============================================================
-  // ПОДСКАЗКА — ОДНА озвучка
+  // ПОДСКАЗКА
   // ============================================================
   async function showHint() {
     if (!hwWriter || isShowingHint) return;
@@ -667,15 +698,17 @@
     const char = currentItems[currentIndex].char;
 
     if (dom.instruction) dom.instruction.textContent = '👀 Загрузка озвучки...';
-    await preloadAudio(char);
+
+    // СНАЧАЛА предзагрузка mp3
+    await findAudioFor(char);
 
     if (dom.instruction) {
       dom.instruction.textContent = '👀 Смотрите анимацию и слушайте...';
       dom.instruction.style.color = '#8a4a2a';
     }
 
-    // Озвучка + анимация параллельно
-    const speech = speakAndWait(char);
+    // Озвучка и анимация параллельно
+    const speech = speakBestForChar(char);
     const anim = new Promise((resolve) => {
       hwWriter.animateCharacter({ onComplete: () => resolve() });
     });
@@ -689,22 +722,29 @@
   }
 
   // ============================================================
-  // АВТОПЛЕЙ — ОДНА озвучка на иероглиф
+  // АВТОПЛЕЙ — озвучка гарантированно из mp3
   // ============================================================
   async function preloadUpcoming(startIndex) {
-    const batch = 6;
+    const batch = 5;
     const promises = [];
     for (let i = 0; i < batch; i++) {
       const idx = (startIndex + i) % currentItems.length;
       const ch = currentItems[idx].char;
-      if (ch) promises.push(preloadAudio(ch));
+      if (ch) promises.push(findAudioFor(ch));
     }
     await Promise.all(promises);
   }
 
-  async function startAutoplay() {
+  function startAutoplay() {
     if (autoplayActive) { stopAutoplay(); return; }
     if (currentItems.length === 0) return;
+
+    // ⚠️ ВАЖНО: разблокировка autoplay в СИНХРОННОМ контексте
+    //    Пробуем короткий play() на «пустом» звуке, чтобы браузер дал разрешение
+    try {
+      const unlock = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+      unlock.play().catch(() => {});
+    } catch (e) {}
 
     autoplayActive = true;
     autoplayCancelToken++;
@@ -718,16 +758,16 @@
       dom.autoplayIndicator.classList.add('active');
     }
 
-    // Предзагрузка 6 иероглифов ДО старта
     if (dom.instruction) {
       dom.instruction.textContent = '⏳ Загрузка озвучки...';
       dom.instruction.style.color = '#2563eb';
     }
-    await preloadUpcoming(currentIndex);
 
-    if (!autoplayActive || myToken !== autoplayCancelToken) return;
-
-    autoplayLoop(myToken);
+    // Асинхронно грузим mp3 и потом запускаем цикл
+    preloadUpcoming(currentIndex).then(() => {
+      if (!autoplayActive || myToken !== autoplayCancelToken) return;
+      autoplayLoop(myToken);
+    });
   }
 
   function stopAutoplay() {
@@ -783,12 +823,12 @@
         dom.instruction.style.color = '#2563eb';
       }
 
-      // Ждём MP3 ТЕКУЩЕГО
-      await preloadAudio(data.char);
+      // ⚠️ СНАЧАЛА предзагрузка mp3 (обычно уже готова)
+      await findAudioFor(data.char);
       if (!autoplayActive || token !== autoplayCancelToken) break;
 
-      // ========== ОДНА ОЗВУЧКА + АНИМАЦИЯ ПАРАЛЛЕЛЬНО ==========
-      const speech = speakAndWait(data.char);
+      // Параллельно: озвучка + анимация
+      const speech = speakBestForChar(data.char);
       const anim = new Promise((resolve) => {
         hwWriter.animateCharacter({ onComplete: () => resolve() });
       });
@@ -803,12 +843,10 @@
       if (!autoplayActive || token !== autoplayCancelToken) break;
 
       currentIndex = (currentIndex + 1) % currentItems.length;
-
-      // Фоновая предзагрузка
       preloadUpcoming(currentIndex);
 
       await new Promise((resolve) => {
-        autoplayDelayTimer = setTimeout(resolve, 200);
+        autoplayDelayTimer = setTimeout(resolve, 150);
       });
     }
 
@@ -876,7 +914,8 @@
             '</div>' +
             '<div style="font-size:20px;opacity:0.5;">🔊</div>';
           item.addEventListener('click', function () {
-            preloadAudio(ex.word).then(() => speakAndWait(ex.word));
+            // Озвучиваем СЛОВО
+            speakWord(ex.word);
             item.style.background = '#e6f4ef';
             setTimeout(function () { item.style.background = ''; }, 300);
           });
@@ -923,7 +962,7 @@
     if (dom.category) dom.category.textContent = 'HSK ' + level + ' · ' + chars.length + ' знаков';
     loadCharacter(0);
     updateStats();
-    setTimeout(() => preloadUpcoming(0), 400);
+    setTimeout(() => preloadUpcoming(0), 300);
   }
 
   function startDueReview() {
@@ -944,7 +983,7 @@
     if (dom.category) dom.category.textContent = '🔄 Повторение · ' + due.length;
     loadCharacter(0);
     updateStats();
-    setTimeout(() => preloadUpcoming(0), 400);
+    setTimeout(() => preloadUpcoming(0), 300);
     return true;
   }
 
@@ -966,7 +1005,7 @@
     if (dom.category) dom.category.textContent = '🎯 Слабые места · ' + weak.length;
     loadCharacter(0);
     updateStats();
-    setTimeout(() => preloadUpcoming(0), 400);
+    setTimeout(() => preloadUpcoming(0), 300);
     return true;
   }
 
@@ -1017,7 +1056,7 @@
     if (dom.char) dom.char.addEventListener('click', () => {
       if (currentItems.length > 0) {
         const ch = currentItems[currentIndex].char;
-        preloadAudio(ch).then(() => speakAndWait(ch));
+        speakBestForChar(ch);
       }
     });
 
