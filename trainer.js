@@ -1,25 +1,33 @@
 /* trainer.js — Тренажёр каллиграфии с маркером и автоплеем
    Зависимости: dictionary-data.js (window.HSK_DICT), pinyinPro, HanziWriter
-   Озвучка: Audio/cmn-{иероглиф или слово}.mp3 → браузер
-   Прерывает предыдущий звук при новом клике.
+   Озвучка: MP3 из Audio/hsk1/…hsk5/ → Audio/ → браузер (как в dictionary.html)
 */
 (function () {
   'use strict';
 
   const STORAGE_KEY = 'hanzi_trainer_progress_v1';
   const REVIEW_INTERVALS = [0, 1, 2, 4, 7, 15, 30, 60, 120];
+  const AUTOPLAY_PLAYLIST_SIZE = 50;
 
   // ============================================================
-  // ОЗВУЧКА
+  // ОЗВУЧКА: MP3 из Audio/hskN/ или Audio/, fallback → браузер
   // ============================================================
-  const AUDIO_DIR = 'Audio/';
+  const AUDIO_DIRS = [
+    'Audio/hsk1/',
+    'Audio/hsk2/',
+    'Audio/hsk3/',
+    'Audio/hsk4/',
+    'Audio/hsk5/',
+    'Audio/'
+  ];
   const AUDIO_PREFIX = 'cmn-';
   const audioCache = new Map();
 
-  // Глобальный текущий звук — чтобы прерывать при новом клике
   let currentPlayingAudio = null;
+  let speechToken = 0;
 
   function stopCurrentAudio() {
+    speechToken++;
     if (currentPlayingAudio) {
       try {
         currentPlayingAudio.pause();
@@ -57,57 +65,61 @@
     speechSynthesis.speak(u);
   }
 
-  function audioPathFor(text) {
-    return AUDIO_DIR + AUDIO_PREFIX + text + '.mp3';
-  }
-
+  // Каскадный поиск mp3 по папкам
   function preloadAudio(text) {
     return new Promise((resolve) => {
       const cached = audioCache.get(text);
       if (cached && cached.ready === true) { resolve(true); return; }
       if (cached && cached.ready === false) { resolve(false); return; }
-
-      const audio = new Audio();
-      audio.preload = 'auto';
-      audio.src = audioPathFor(text);
-
-      let resolved = false;
-      const done = (ok) => {
-        if (resolved) return;
-        resolved = true;
-        audioCache.set(text, { ready: ok, audio: ok ? audio : null });
-        resolve(ok);
-      };
-
-      audio.addEventListener('canplaythrough', () => done(true), { once: true });
-      audio.addEventListener('loadeddata', () => done(true), { once: true });
-      audio.addEventListener('error', () => done(false), { once: true });
-
-      setTimeout(() => {
-        if (!resolved) {
-          if (audio.readyState >= 2) done(true);
-          else done(false);
-        }
-      }, 4000);
-
-      try { audio.load(); } catch (e) { done(false); }
+      tryNextDir(text, 0, resolve);
     });
   }
 
-  async function findAudioFor(char) {
-    if (await preloadAudio(char)) return { text: char, isWord: false };
-    const examples = getExamples(char);
-    for (const ex of examples) {
-      if (ex.word === char) continue;
-      if (await preloadAudio(ex.word)) return { text: ex.word, isWord: true };
+  function tryNextDir(text, dirIndex, resolve) {
+    if (dirIndex >= AUDIO_DIRS.length) {
+      audioCache.set(text, { ready: false, audio: null });
+      resolve(false);
+      return;
     }
-    return null;
+
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audio.src = AUDIO_DIRS[dirIndex] + AUDIO_PREFIX + text + '.mp3';
+
+    let resolved = false;
+    const onError = () => {
+      if (resolved) return;
+      resolved = true;
+      tryNextDir(text, dirIndex + 1, resolve);
+    };
+    const onCanPlay = () => {
+      if (resolved) return;
+      resolved = true;
+      audioCache.set(text, { ready: true, audio });
+      resolve(true);
+    };
+
+    audio.addEventListener('error', onError, { once: true });
+    audio.addEventListener('canplaythrough', onCanPlay, { once: true });
+    audio.addEventListener('loadeddata', onCanPlay, { once: true });
+
+    setTimeout(() => {
+      if (!resolved) {
+        if (audio.readyState >= 2) onCanPlay();
+        else onError();
+      }
+    }, 3000);
+
+    try { audio.load(); } catch (e) { onError(); }
   }
 
-  // Проиграть mp3 + дождаться окончания. Прерывает предыдущий.
-  function playAndWait(audio, fallbackText) {
-    stopCurrentAudio();
+  function playAndWait(audio, fallbackText, myToken) {
     return new Promise((resolve) => {
+      if (myToken !== speechToken) { resolve(false); return; }
+
+      if (currentPlayingAudio && currentPlayingAudio !== audio) {
+        try { currentPlayingAudio.pause(); } catch (e) {}
+      }
       currentPlayingAudio = audio;
 
       try {
@@ -118,14 +130,15 @@
           audio.removeEventListener('ended', onEnd);
           audio.removeEventListener('error', onErr);
           if (currentPlayingAudio === audio) currentPlayingAudio = null;
-          resolve();
+          resolve(true);
         };
         const onErr = () => {
           audio.removeEventListener('ended', onEnd);
           audio.removeEventListener('error', onErr);
           if (currentPlayingAudio === audio) currentPlayingAudio = null;
+          if (myToken !== speechToken) { resolve(false); return; }
           speakWithBrowser(fallbackText);
-          setTimeout(resolve, 1000);
+          setTimeout(() => resolve(true), 1000);
         };
         audio.addEventListener('ended', onEnd, { once: true });
         audio.addEventListener('error', onErr, { once: true });
@@ -133,74 +146,73 @@
         const p = audio.play();
         if (p && p.catch) {
           p.catch((err) => {
-            console.warn('[AUDIO] play() заблокирован:', fallbackText, err && err.name);
+            console.warn('[AUDIO] play() отклонён:', fallbackText, err && err.name);
             audio.removeEventListener('ended', onEnd);
             audio.removeEventListener('error', onErr);
             if (currentPlayingAudio === audio) currentPlayingAudio = null;
+            if (myToken !== speechToken) { resolve(false); return; }
             speakWithBrowser(fallbackText);
-            setTimeout(resolve, 1000);
+            setTimeout(() => resolve(true), 1000);
           });
         }
       } catch (e) {
         if (currentPlayingAudio === audio) currentPlayingAudio = null;
+        if (myToken !== speechToken) { resolve(false); return; }
         speakWithBrowser(fallbackText);
-        setTimeout(resolve, 1000);
+        setTimeout(() => resolve(true), 1000);
       }
     });
   }
 
-  // Озвучить слово (примеры, HSK)
   async function speakWord(word) {
     if (!word) return;
-
     stopCurrentAudio();
+    const myToken = speechToken;
 
-    if (!await preloadAudio(word)) {
-      speakWithBrowser(word);
-      return;
-    }
+    const ok = await preloadAudio(word);
+    if (myToken !== speechToken) return;
+
+    if (!ok) { speakWithBrowser(word); return; }
     const c = audioCache.get(word);
     if (c && c.ready && c.audio) {
-      await playAndWait(c.audio, word);
-    } else {
+      await playAndWait(c.audio, word, myToken);
+    } else if (myToken === speechToken) {
       speakWithBrowser(word);
     }
   }
 
-  // Озвучить иероглиф (иероглиф → слово → браузер)
-  async function speakBestForChar(char) {
+  async function speakChar(char) {
     if (!char) return;
-
     stopCurrentAudio();
+    const myToken = speechToken;
 
-    const found = await findAudioFor(char);
-    if (!found) {
+    const ok = await preloadAudio(char);
+    if (myToken !== speechToken) return;
+
+    if (!ok) {
       speakWithBrowser(char);
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 900));
       return;
     }
-    const c = audioCache.get(found.text);
+    const c = audioCache.get(char);
     if (c && c.ready && c.audio) {
-      await playAndWait(c.audio, found.text);
-    } else {
-      speakWithBrowser(found.text);
-      await new Promise(r => setTimeout(r, 1000));
+      await playAndWait(c.audio, char, myToken);
+    } else if (myToken === speechToken) {
+      speakWithBrowser(char);
+      await new Promise(r => setTimeout(r, 900));
     }
   }
 
-  // Fire-and-forget
   function speakChinese(text) {
     if (!text) return;
-    if (/^\p{Script=Han}$/u.test(text)) speakBestForChar(text);
+    if (/^\p{Script=Han}$/u.test(text)) speakChar(text);
     else speakWord(text);
   }
 
-  // Экспорт
   window.speakChinese = speakChinese;
   window.speakWord = speakWord;
-  window.speakBestForChar = speakBestForChar;
+  window.speakChar = speakChar;
   window.stopCurrentAudio = stopCurrentAudio;
-  window.findAudioFor = findAudioFor;
   window.preloadAudio = preloadAudio;
 
   // ============================================================
@@ -641,7 +653,7 @@
     updateCharStatus();
     clearMarker();
 
-    if (data.char) findAudioFor(data.char);
+    if (data.char) preloadAudio(data.char);
 
     if (!opts.silent && dom.instruction) {
       dom.instruction.textContent = markerActive
@@ -725,14 +737,14 @@
     const char = currentItems[currentIndex].char;
 
     if (dom.instruction) dom.instruction.textContent = '👀 Загрузка озвучки...';
-    await findAudioFor(char);
+    await preloadAudio(char);
 
     if (dom.instruction) {
       dom.instruction.textContent = '👀 Смотрите анимацию и слушайте...';
       dom.instruction.style.color = '#8a4a2a';
     }
 
-    const speech = speakBestForChar(char);
+    const speech = speakChar(char);
     const anim = new Promise((resolve) => {
       hwWriter.animateCharacter({ onComplete: () => resolve() });
     });
@@ -754,7 +766,7 @@
     for (let i = 0; i < batch; i++) {
       const idx = ((startIndex + i) % currentItems.length + currentItems.length) % currentItems.length;
       const ch = currentItems[idx].char;
-      if (ch) promises.push(findAudioFor(ch));
+      if (ch) promises.push(preloadAudio(ch));
     }
     await Promise.all(promises);
   }
@@ -776,35 +788,59 @@
     }
 
     if (dom.instruction) {
-      dom.instruction.textContent = '⏳ Загрузка озвучки...';
+      dom.instruction.textContent = '⏳ Подготовка плейлиста...';
       dom.instruction.style.color = '#2563eb';
     }
 
-    await preloadUpcoming(currentIndex);
+    // Плейлист: для каждого иероглифа ищем mp3
+    const playlist = [];
+    const total = Math.min(currentItems.length, AUTOPLAY_PLAYLIST_SIZE);
+
+    for (let i = 0; i < total; i++) {
+      if (!autoplayActive || myToken !== autoplayCancelToken) return;
+
+      const idx = (currentIndex + i) % currentItems.length;
+      const ch = currentItems[idx].char;
+
+      if (dom.autoplayProgress) {
+        dom.autoplayProgress.textContent = 'Загрузка ' + (i + 1) + ' / ' + total;
+      }
+
+      const ok = await preloadAudio(ch);
+
+      let audio = null;
+      if (ok) {
+        const c = audioCache.get(ch);
+        if (c && c.ready && c.audio) audio = c.audio;
+      }
+
+      playlist.push({
+        char: ch,
+        index: idx,
+        pinyin: currentItems[idx].pinyin,
+        meaning: currentItems[idx].meaning,
+        audio,
+        hasMp3: !!audio
+      });
+    }
+
     if (!autoplayActive || myToken !== autoplayCancelToken) return;
 
     // Разблокировка autoplay
-    const first = currentItems[currentIndex];
-    const unlockData = await findAudioFor(first.char);
-    if (unlockData) {
-      const c = audioCache.get(unlockData.text);
-      if (c && c.ready && c.audio) {
-        try {
-          c.audio.currentTime = 0;
-          c.audio.volume = 1;
-          const p = c.audio.play();
-          if (p && p.catch) {
-            p.catch(() => console.warn('[AUTO] Разблокировка не удалась'));
-          }
-          setTimeout(() => { try { c.audio.pause(); } catch (e) {} }, 150);
-        } catch (e) {}
-      }
+    if (playlist[0] && playlist[0].audio) {
+      try {
+        playlist[0].audio.currentTime = 0;
+        const p = playlist[0].audio.play();
+        if (p && p.catch) p.catch(() => {});
+        setTimeout(() => { try { playlist[0].audio.pause(); } catch (e) {} }, 200);
+      } catch (e) {}
     }
 
-    autoplayLoop(myToken);
+    autoplayLoopFromPlaylist(myToken, playlist);
   }
 
   function stopAutoplay() {
+    stopCurrentAudio();
     autoplayActive = false;
     autoplayCancelToken++;
     if (autoplayDelayTimer) {
@@ -822,12 +858,17 @@
     }
   }
 
-  async function autoplayLoop(token) {
+  async function autoplayLoopFromPlaylist(token, playlist) {
+    let plIndex = 0;
+
     while (autoplayActive && token === autoplayCancelToken) {
-      const data = currentItems[currentIndex];
+      const item = playlist[plIndex];
+      if (!item) break;
+
+      const data = { char: item.char, pinyin: item.pinyin, meaning: item.meaning };
 
       if (dom.autoplayProgress) {
-        dom.autoplayProgress.textContent = (currentIndex + 1) + ' / ' + currentItems.length;
+        dom.autoplayProgress.textContent = (plIndex + 1) + ' / ' + playlist.length;
       }
 
       dom.char.textContent = data.char;
@@ -850,42 +891,70 @@
           highlightColor: '#d92d20', outlineColor: '#d9e0ea', drawingColor: '#1a1f2b'
         });
       } catch (e) {
-        console.warn('Autoplay: ошибка создания writer', e);
+        console.warn('Autoplay: ошибка writer', e);
         break;
       }
 
       if (dom.instruction) {
-        dom.instruction.textContent = '⏳ ' + data.char + ' — загрузка mp3...';
+        dom.instruction.textContent = '▶️ Автоплей (' + (plIndex + 1) + '/' + playlist.length + ')';
         dom.instruction.style.color = '#2563eb';
       }
-      await findAudioFor(data.char);
-      if (!autoplayActive || token !== autoplayCancelToken) break;
 
       await new Promise(r => { autoplayDelayTimer = setTimeout(r, 400); });
       if (!autoplayActive || token !== autoplayCancelToken) break;
 
-      if (dom.instruction) {
-        dom.instruction.textContent = '▶️ Автоплей (' + (currentIndex + 1) + '/' + currentItems.length + ')';
-        dom.instruction.style.color = '#2563eb';
-      }
+      // Озвучка + анимация параллельно
+      const speech = (async () => {
+        if (item.hasMp3 && item.audio) {
+          try {
+            item.audio.currentTime = 0;
+            item.audio.volume = 1;
+            await new Promise((resolve) => {
+              const onEnd = () => {
+                item.audio.removeEventListener('ended', onEnd);
+                item.audio.removeEventListener('error', onErr);
+                resolve();
+              };
+              const onErr = () => {
+                item.audio.removeEventListener('ended', onEnd);
+                item.audio.removeEventListener('error', onErr);
+                speakWithBrowser(item.char);
+                setTimeout(resolve, 900);
+              };
+              item.audio.addEventListener('ended', onEnd, { once: true });
+              item.audio.addEventListener('error', onErr, { once: true });
+
+              const p = item.audio.play();
+              if (p && p.catch) {
+                p.catch(() => {
+                  item.audio.removeEventListener('ended', onEnd);
+                  item.audio.removeEventListener('error', onErr);
+                  speakWithBrowser(item.char);
+                  setTimeout(resolve, 900);
+                });
+              }
+            });
+          } catch (e) {
+            speakWithBrowser(item.char);
+            await new Promise(r => setTimeout(r, 900));
+          }
+        } else {
+          speakWithBrowser(item.char);
+          await new Promise(r => setTimeout(r, 900));
+        }
+      })();
 
       const anim = new Promise((resolve) => {
         hwWriter.animateCharacter({ onComplete: () => resolve() });
       });
 
-      const speech = speakBestForChar(data.char);
-
-      preloadUpcoming(currentIndex + 1);
-
       await Promise.all([speech, anim]);
       if (!autoplayActive || token !== autoplayCancelToken) break;
 
-      await new Promise(r => { autoplayDelayTimer = setTimeout(r, 1800); });
+      await new Promise(r => { autoplayDelayTimer = setTimeout(r, 800); });
       if (!autoplayActive || token !== autoplayCancelToken) break;
 
-      currentIndex = (currentIndex + 1) % currentItems.length;
-
-      await new Promise(r => { autoplayDelayTimer = setTimeout(r, 300); });
+      plIndex++;
     }
 
     if (token === autoplayCancelToken && autoplayActive) {
@@ -1092,7 +1161,7 @@
 
     if (dom.char) dom.char.addEventListener('click', () => {
       if (currentItems.length > 0) {
-        speakBestForChar(currentItems[currentIndex].char);
+        speakChar(currentItems[currentIndex].char);
       }
     });
 
