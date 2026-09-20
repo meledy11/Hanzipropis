@@ -428,6 +428,18 @@
       speechSynthesis.onvoiceschanged = pickZhVoice;
     }
 
+    // Разблокировка синтеза на первый user gesture
+    function unlockSpeechOnce() {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        const u = new SpeechSynthesisUtterance('');
+        u.volume = 0;
+        speechSynthesis.speak(u);
+      } catch (e) {}
+    }
+    document.addEventListener('click', unlockSpeechOnce, { once: true });
+    document.addEventListener('touchstart', unlockSpeechOnce, { once: true });
+
     function speakWithBrowser(text) {
       if (!('speechSynthesis' in window)) { statusEl.textContent = 'Синтез речи недоступен'; return; }
       try { speechSynthesis.cancel(); } catch (e) {}
@@ -437,7 +449,7 @@
       u.pitch = 1;
       u.volume = 1;
       if (zhVoice) u.voice = zhVoice;
-      speechSynthesis.speak(u);
+      try { speechSynthesis.speak(u); } catch (e) {}
     }
 
     function audioPathFor(text) {
@@ -480,6 +492,8 @@
       audio.addEventListener('canplaythrough', onCanPlay, { once: true });
       audio.addEventListener('loadeddata', onCanPlay, { once: true });
 
+      setTimeout(() => { if (!resolved) { if (audio.readyState >= 2) onCanPlay(); else onError(); } }, 1000);
+
       try { audio.load(); } catch (e) { onError(); }
     }
 
@@ -514,8 +528,6 @@
       return '';
     }
 
-    // Локальный путь к данным черт: hanzi-writer-data/<иероглиф>.json
-    // Например: 你 → hanzi-writer-data/你.json (с URL-кодированием)
     function hanziDataPath(char) {
       return 'hanzi-writer-data/' + encodeURIComponent(char) + '.json';
     }
@@ -697,7 +709,7 @@
     function scheduleGenerate() { clearTimeout(timer); timer = setTimeout(() => { generate(); saveCurrent(); }, 420); }
 
     // ============================================================
-    // HSK ЛОГИКА (window.HSK_DICT из dictionary-data.js)
+    // HSK ЛОГИКА
     // ============================================================
     function getHskWords(level) {
       if (window.HSK_DICT && window.HSK_DICT['hsk' + level]) {
@@ -979,13 +991,11 @@
     tabHsk2.addEventListener('click', () => showTab('hsk2'));
     tabHsk3.addEventListener('click', () => showTab('hsk3'));
 
-    // Тренажёр — переход на отдельную страницу
     tabTrainer.addEventListener('click', () => {
       try { saveCurrent(); } catch (e) {}
       location.href = 'trainer.html';
     });
 
-    // Грамматика — переход на отдельную страницу
     tabGrammar.addEventListener('click', () => {
       try { saveCurrent(); } catch (e) {}
       location.href = 'grammar.html';
@@ -1122,7 +1132,6 @@
       window.addEventListener('appinstalled', () => { installBtn.style.display = 'none'; });
     })();
 
-    // Горячие клавиши: Alt+G — грамматика, Alt+D — словарь, Alt+T — тренажёр
     document.addEventListener('keydown', e => {
       if (e.altKey && (e.key === 'g' || e.key === 'G' || e.key === 'п' || e.key === 'П')) {
         location.href = 'grammar.html';

@@ -28,15 +28,14 @@
     return data;
   }
 
-  // Общий charDataLoader — передаётся во все HanziWriter.create
   const CHAR_DATA_LOADER = (ch, onComplete, onError) => {
     loadHanziData(ch).then(onComplete).catch(onError);
   };
 
   // ============================================================
-  // ОЗВУЧКА
+  // ОЗВУЧКА: mp3 из Audio/ → fallback на браузерный синтез
   // ============================================================
-  const AUDIO_DIRS = ['Audio/hsk1/','Audio/hsk2/','Audio/hsk3/','Audio/hsk4/','Audio/hsk5/','Audio/hsk6/','Audio/'];
+  const AUDIO_DIRS = ['Audio/'];
   const AUDIO_PREFIX = 'cmn-';
   const audioCache = new Map();
   let currentPlayingAudio = null;
@@ -63,13 +62,25 @@
     speechSynthesis.onvoiceschanged = pickZhVoice;
   }
 
+  // Разблокировка синтеза на первый user gesture (Chrome/Safari/WebView)
+  function unlockSpeechOnce() {
+    if (!('speechSynthesis' in window)) return;
+    try {
+      const u = new SpeechSynthesisUtterance('');
+      u.volume = 0;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  document.addEventListener('click', unlockSpeechOnce, { once: true });
+  document.addEventListener('touchstart', unlockSpeechOnce, { once: true });
+
   function speakWithBrowser(text) {
     if (!('speechSynthesis' in window)) return;
     try { speechSynthesis.cancel(); } catch (e) {}
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'zh-CN'; u.rate = 0.85; u.pitch = 1; u.volume = 1;
     if (zhVoice) u.voice = zhVoice;
-    speechSynthesis.speak(u);
+    try { speechSynthesis.speak(u); } catch (e) {}
   }
 
   function preloadAudio(text) {
@@ -95,7 +106,8 @@
     audio.addEventListener('error', onError, { once: true });
     audio.addEventListener('canplaythrough', onCanPlay, { once: true });
     audio.addEventListener('loadeddata', onCanPlay, { once: true });
-    setTimeout(() => { if (!resolved) { if (audio.readyState >= 2) onCanPlay(); else onError(); } }, 3000);
+    // Быстрый таймаут: если mp3 не готов за 1 с — пробуем дальше (или уходим в синтез)
+    setTimeout(() => { if (!resolved) { if (audio.readyState >= 2) onCanPlay(); else onError(); } }, 1000);
     try { audio.load(); } catch (e) { onError(); }
   }
 
@@ -625,7 +637,6 @@
       charDataLoader: CHAR_DATA_LOADER
     });
 
-    // Определяем количество черт через локальный кэш (надёжнее, чем getCharacterData)
     loadHanziData(data.char).then(function (charData) {
       currentStrokesTotal = (charData.strokes || []).length;
       updateProgress(0);
