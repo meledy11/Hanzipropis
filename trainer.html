@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-title" content="Тренажёр 漢字">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#16835f">
-  <title>Тренажёр каллиграфии · HSK 1-5</title>
+  <title>Тренажёр каллиграфии · HSK 1-6</title>
 
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml"
@@ -46,7 +46,6 @@
       display: flex; flex-direction: column; align-items: center;
     }
 
-    /* ===== Верхняя панель ===== */
     .topbar {
       position: sticky; top: 0; z-index: 30;
       width: 100%;
@@ -66,14 +65,8 @@
       color: var(--ink); font-weight: 600; text-decoration: none;
     }
     .back-btn:active { background: #eef2f7; }
-    .title {
-      flex: 1; font-size: 15px; font-weight: 800;
-      color: var(--ink); letter-spacing: -0.2px; text-align: center;
-    }
-    .tab-topbar {
-      display: flex; gap: 4px; background: #e6eaf1;
-      padding: 4px; border-radius: 10px;
-    }
+    .title { flex: 1; font-size: 15px; font-weight: 800; color: var(--ink); letter-spacing: -0.2px; text-align: center; }
+    .tab-topbar { display: flex; gap: 4px; background: #e6eaf1; padding: 4px; border-radius: 10px; }
     .tab-topbar button {
       min-height: 34px; padding: 0 12px;
       border: none; border-radius: 8px;
@@ -81,16 +74,9 @@
       font-size: 12px; font-weight: 700;
       cursor: pointer; touch-action: manipulation;
     }
-    .tab-topbar button.active {
-      background: #fff; color: var(--ink);
-      box-shadow: 0 1px 3px rgba(15,23,42,0.08);
-    }
-    .stats-mini {
-      font-size: 12px; color: var(--muted); font-weight: 700;
-      white-space: nowrap; min-width: 58px; text-align: right;
-    }
+    .tab-topbar button.active { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(15,23,42,0.08); }
+    .stats-mini { font-size: 12px; color: var(--muted); font-weight: 700; white-space: nowrap; min-width: 58px; text-align: right; }
 
-    /* ===== Общие view ===== */
     .view { width: 100%; display: flex; flex-direction: column; align-items: center; }
     .view.hidden { display: none; }
 
@@ -117,10 +103,7 @@
     .mode-btn .mode-icon { font-size: 16px; line-height: 1; }
     .mode-btn .mode-label { font-size: 11px; line-height: 1; }
 
-    .panel {
-      background: #fff; border: 1px solid var(--line);
-      border-radius: var(--radius); padding: 14px;
-    }
+    .panel { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
     .char-row { display: flex; align-items: center; gap: 14px; }
     .char-display {
       font-family: "KaiTi", "STKaiti", serif;
@@ -137,10 +120,7 @@
     }
     .streak { font-size: 13px; font-weight: 700; color: var(--red); }
     .category-info { font-size: 12px; color: var(--muted); }
-    .instruction {
-      text-align: center; font-size: 13px; color: var(--muted);
-      font-style: italic; min-height: 18px;
-    }
+    .instruction { text-align: center; font-size: 13px; color: var(--muted); font-style: italic; min-height: 18px; }
 
     .canvas-wrap {
       position: relative; background: #fff;
@@ -168,7 +148,6 @@
 
     #hw-container { width: 100%; height: 100%; position: relative; z-index: 1; }
     #hw-container svg { display: block; }
-
     #marker-canvas {
       position: absolute; inset: 8px;
       width: calc(100% - 16px); height: calc(100% - 16px);
@@ -191,7 +170,6 @@
       background: #fef3c7; border-color: #f59e0b; color: #92400e;
       box-shadow: 0 2px 8px rgba(245,158,11,0.3);
     }
-
     .autoplay-indicator {
       position: absolute; bottom: 10px; left: 10px; z-index: 15;
       min-height: 30px; padding: 0 12px;
@@ -200,34 +178,15 @@
       display: none; align-items: center; gap: 6px;
     }
     .autoplay-indicator.active { display: flex; }
-    .autoplay-indicator .pulse-dot {
-      width: 8px; height: 8px; background: #fff; border-radius: 50%;
-      animation: dotPulse 1s infinite;
-    }
-    @keyframes dotPulse {
-      0%,100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(1.3); }
-    }
+    .autoplay-indicator .pulse-dot { width: 8px; height: 8px; background: #fff; border-radius: 50%; animation: dotPulse 1s infinite; }
+    @keyframes dotPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.3); } }
 
-    .progress-bar {
-      width: 100%; height: 8px; background: #e2e6ee;
-      border-radius: 4px; overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--green), #4ecdc4);
-      width: 0%; transition: width .3s ease-out;
-    }
-    .stats-row {
-      display: flex; justify-content: space-around;
-      background: #f7f9fc; padding: 10px 14px;
-      border-radius: 12px; font-weight: 700; font-size: 13px;
-    }
+    .progress-bar { width: 100%; height: 8px; background: #e2e6ee; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), #4ecdc4); width: 0%; transition: width .3s ease-out; }
+    .stats-row { display: flex; justify-content: space-around; background: #f7f9fc; padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 13px; }
     .stats-row .combo { color: var(--red); }
 
-    .controls {
-      display: grid; grid-template-columns: 1fr 1fr 2fr 1fr 1fr; gap: 6px;
-    }
+    .controls { display: grid; grid-template-columns: 1fr 1fr 2fr 1fr 1fr; gap: 6px; }
     .ctrl-btn {
       min-height: 50px; border-radius: 12px;
       font-size: 14px; font-weight: 700;
@@ -238,22 +197,11 @@
       display: flex; align-items: center; justify-content: center;
     }
     .ctrl-btn:active { background: #eef2f7; transform: scale(0.97); }
-    .ctrl-btn.primary {
-      background: var(--green); border-color: var(--green); color: #fff;
-      box-shadow: 0 4px 12px rgba(22,131,95,0.35);
-    }
+    .ctrl-btn.primary { background: var(--green); border-color: var(--green); color: #fff; box-shadow: 0 4px 12px rgba(22,131,95,0.35); }
     .ctrl-btn.primary:active { background: #12694a; }
-    .ctrl-btn.warn {
-      background: #fef3c7; border-color: #f59e0b; color: #92400e;
-    }
-    .ctrl-btn.play {
-      background: var(--blue); border-color: var(--blue); color: #fff;
-      box-shadow: 0 4px 12px rgba(37,99,235,0.35);
-    }
-    .ctrl-btn.play.active {
-      background: var(--red); border-color: var(--red);
-      box-shadow: 0 4px 12px rgba(217,45,32,0.35);
-    }
+    .ctrl-btn.warn { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+    .ctrl-btn.play { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,0.35); }
+    .ctrl-btn.play.active { background: var(--red); border-color: var(--red); box-shadow: 0 4px 12px rgba(217,45,32,0.35); }
 
     .floating {
       position: absolute; top: 50%; left: 50%;
@@ -269,7 +217,7 @@
       100% { opacity: 0; transform: translate(-50%, -100%) scale(1); }
     }
 
-    /* ===== Модалка примеров ===== */
+    /* ===== МОДАЛКА ПРИМЕРОВ ===== */
     .modal-overlay {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.6);
@@ -283,17 +231,11 @@
       display: flex; flex-direction: column;
       box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     }
-    .modal-head {
-      text-align: center; padding-bottom: 12px;
-      border-bottom: 2px dashed var(--line); margin-bottom: 12px;
-    }
+    .modal-head { text-align: center; padding-bottom: 12px; border-bottom: 2px dashed var(--line); margin-bottom: 12px; }
     .modal-char { font-family: "KaiTi", "STKaiti", serif; font-size: 56px; line-height: 1; }
     .modal-pinyin { color: var(--red); font-size: 22px; font-weight: 800; margin-top: 4px; }
     .modal-meaning { color: var(--muted); font-size: 14px; margin-top: 2px; }
-    .modal-list {
-      flex: 1; overflow-y: auto;
-      display: flex; flex-direction: column; gap: 6px;
-    }
+    .modal-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
     .example-item {
       display: flex; align-items: center; gap: 12px;
       background: #f7f9fc; border: 1px solid var(--line);
@@ -301,29 +243,14 @@
       cursor: pointer; transition: all .12s;
     }
     .example-item:active { background: var(--green-soft); transform: scale(0.98); }
-    .example-word {
-      font-family: "KaiTi", "STKaiti", serif;
-      font-size: 24px; line-height: 1.1; min-width: 70px;
-    }
+    .example-word { font-family: "KaiTi", "STKaiti", serif; font-size: 24px; line-height: 1.1; min-width: 70px; }
     .example-info { flex: 1; min-width: 0; }
     .example-pinyin { color: var(--red); font-weight: 700; font-size: 13px; }
     .example-meaning { color: var(--muted); font-size: 12px; margin-top: 2px; }
-    .example-sentence {
-      font-size: 12px; color: #6b7280;
-      font-style: italic; padding: 4px 12px 8px; line-height: 1.5;
-    }
-    .modal-close {
-      margin-top: 12px; width: 100%; min-height: 48px;
-      border: none; border-radius: 12px;
-      background: var(--green); color: #fff;
-      font-size: 14px; font-weight: 700; cursor: pointer;
-    }
+    .example-sentence { font-size: 12px; color: #6b7280; font-style: italic; padding: 4px 12px 8px; line-height: 1.5; }
+    .modal-close { margin-top: 12px; width: 100%; min-height: 48px; border: none; border-radius: 12px; background: var(--green); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
     .modal-close:active { background: #12694a; }
-
-    .progress-block {
-      text-align: center; padding: 10px;
-      background: #f7f9fc; border-radius: 12px; margin-bottom: 10px;
-    }
+    .progress-block { text-align: center; padding: 10px; background: #f7f9fc; border-radius: 12px; margin-bottom: 10px; }
     .progress-stars { font-size: 24px; letter-spacing: 3px; }
     .progress-info { font-size: 12px; color: var(--muted); margin-top: 6px; }
 
@@ -340,15 +267,9 @@
       border-radius: 12px; padding: 10px 14px;
       box-shadow: 0 2px 8px rgba(15,23,42,0.04);
     }
-    .cards-search input {
-      flex: 1; min-width: 0; border: 0; outline: 0;
-      font-size: 15px; color: var(--ink); background: transparent;
-    }
+    .cards-search input { flex: 1; min-width: 0; border: 0; outline: 0; font-size: 15px; color: var(--ink); background: transparent; }
     .cards-search input::placeholder { color: #9aa5b5; }
-    .cards-search .clear-btn {
-      border: 0; background: transparent; color: #9aa5b5;
-      font-size: 20px; cursor: pointer; padding: 0 4px; display: none;
-    }
+    .cards-search .clear-btn { border: 0; background: transparent; color: #9aa5b5; font-size: 20px; cursor: pointer; padding: 0 4px; display: none; }
     .cards-search.has-value .clear-btn { display: block; }
 
     .level-tabs {
@@ -363,10 +284,7 @@
       font-size: 12px; font-weight: 700;
       cursor: pointer; touch-action: manipulation; white-space: nowrap;
     }
-    .level-tabs button.active {
-      background: #fff; color: var(--ink);
-      box-shadow: 0 1px 3px rgba(15,23,42,0.08);
-    }
+    .level-tabs button.active { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(15,23,42,0.08); }
     .level-tabs button.fav-tab { color: var(--gold); font-weight: 800; }
 
     .cards-grid {
@@ -384,24 +302,12 @@
       touch-action: manipulation; padding: 6px; overflow: hidden;
     }
     .card-tile:active { transform: scale(0.95); background: #e8eff8; }
-    .card-tile .tile-char {
-      font-family: "KaiTi", "STKaiti", serif;
-      font-size: 34px; line-height: 1; color: var(--ink);
-    }
-    .card-tile .tile-fav {
-      position: absolute; top: 4px; right: 4px;
-      font-size: 12px; opacity: 0.7;
-      cursor: pointer; padding: 2px 4px;
-      border-radius: 6px; background: rgba(255,255,255,0.9);
-    }
+    .card-tile .tile-char { font-family: "KaiTi", "STKaiti", serif; font-size: 34px; line-height: 1; color: var(--ink); }
+    .card-tile .tile-fav { position: absolute; top: 4px; right: 4px; font-size: 12px; opacity: 0.7; cursor: pointer; padding: 2px 4px; border-radius: 6px; background: rgba(255,255,255,0.9); }
     .card-tile .tile-fav.active { opacity: 1; }
     .card-tile.favorite { border-color: var(--gold); background: #fffbf0; }
     .cards-info { text-align: center; font-size: 12px; color: var(--muted); padding: 4px; }
-    .cards-empty {
-      text-align: center; padding: 60px 20px;
-      color: #8fa3bb; font-size: 14px;
-      grid-column: 1 / -1;
-    }
+    .cards-empty { text-align: center; padding: 60px 20px; color: #8fa3bb; font-size: 14px; grid-column: 1 / -1; }
 
     /* ===== МОДАЛКА КАРТОЧКИ ИЕРОГЛИФА ===== */
     .char-card-modal {
@@ -420,21 +326,9 @@
       box-shadow: 0 -10px 60px rgba(0,0,0,0.3);
       animation: slideUp 0.25s ease-out;
     }
-    @keyframes slideUp {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    .cc-header {
-      display: flex; align-items: center; gap: 16px;
-      padding-bottom: 14px; border-bottom: 2px dashed var(--line);
-      margin-bottom: 12px;
-    }
-    .cc-char {
-      font-family: "KaiTi", "STKaiti", serif;
-      font-size: 72px; line-height: 1; color: var(--ink);
-      cursor: pointer; user-select: none; flex-shrink: 0;
-      transition: color 0.15s;
-    }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .cc-header { display: flex; align-items: center; gap: 16px; padding-bottom: 14px; border-bottom: 2px dashed var(--line); margin-bottom: 12px; }
+    .cc-char { font-family: "KaiTi", "STKaiti", serif; font-size: 72px; line-height: 1; color: var(--ink); cursor: pointer; user-select: none; flex-shrink: 0; transition: color 0.15s; }
     .cc-char:active { color: var(--green); }
     .cc-meta { flex: 1; min-width: 0; }
     .cc-pinyin { font-size: 22px; font-weight: 800; color: var(--red); line-height: 1.1; }
@@ -448,11 +342,7 @@
     }
     .cc-fav-btn:active { transform: scale(0.94); }
     .cc-fav-btn.active { background: #fffbf0; border-color: var(--gold); }
-
-    .cc-actions {
-      display: grid; grid-template-columns: 1fr 2fr;
-      gap: 8px; margin-bottom: 14px;
-    }
+    .cc-actions { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-bottom: 14px; }
     .cc-action-btn {
       min-height: 46px; border-radius: 12px;
       border: 1px solid var(--line);
@@ -463,45 +353,18 @@
       touch-action: manipulation; transition: all 0.12s;
     }
     .cc-action-btn:active { background: #eef2f7; transform: scale(0.98); }
-    .cc-action-btn.primary {
-      background: var(--green); border-color: var(--green); color: #fff;
-      box-shadow: 0 4px 12px rgba(22,131,95,0.3);
-    }
+    .cc-action-btn.primary { background: var(--green); border-color: var(--green); color: #fff; box-shadow: 0 4px 12px rgba(22,131,95,0.3); }
     .cc-action-btn.primary:active { background: #12694a; }
-
-    .cc-section-title {
-      font-size: 11px; font-weight: 800;
-      color: var(--muted); text-transform: uppercase;
-      letter-spacing: 0.5px; margin-bottom: 8px;
-    }
-    .cc-words {
-      flex: 1; overflow-y: auto;
-      display: flex; flex-direction: column;
-      gap: 6px; padding-right: 4px;
-    }
-    .cc-word {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 12px;
-      background: #fafcfe; border: 1px solid var(--line);
-      border-radius: 12px; cursor: pointer; transition: all 0.12s;
-    }
+    .cc-section-title { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .cc-words { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; }
+    .cc-word { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: #fafcfe; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; transition: all 0.12s; }
     .cc-word:active { background: var(--green-soft); transform: scale(0.99); }
-    .cc-word-char {
-      font-family: "KaiTi", "STKaiti", serif;
-      font-size: 26px; line-height: 1.1; color: var(--ink);
-      min-width: 65px;
-    }
+    .cc-word-char { font-family: "KaiTi", "STKaiti", serif; font-size: 26px; line-height: 1.1; color: var(--ink); min-width: 65px; }
     .cc-word-info { flex: 1; min-width: 0; }
     .cc-word-pinyin { color: var(--red); font-size: 13px; font-weight: 700; }
     .cc-word-meaning { color: var(--muted); font-size: 12px; margin-top: 2px; }
     .cc-word-speak { font-size: 18px; opacity: 0.5; }
-
-    .cc-close {
-      margin-top: 12px; width: 100%; min-height: 48px;
-      border: none; border-radius: 12px;
-      background: #e8edf5; color: var(--ink);
-      font-size: 14px; font-weight: 700; cursor: pointer;
-    }
+    .cc-close { margin-top: 12px; width: 100%; min-height: 48px; border: none; border-radius: 12px; background: #e8edf5; color: var(--ink); font-size: 14px; font-weight: 700; cursor: pointer; }
     .cc-close:active { background: #d8e1ec; }
 
     .offline-badge {
@@ -558,6 +421,18 @@
         <button class="mode-btn" data-mode="4" type="button">
           <span class="mode-icon">4️⃣</span>
           <span class="mode-label">HSK 4</span>
+        </button>
+        <button class="mode-btn" data-mode="5" type="button">
+          <span class="mode-icon">5️⃣</span>
+          <span class="mode-label">HSK 5</span>
+        </button>
+        <button class="mode-btn" data-mode="6" type="button">
+          <span class="mode-icon">6️⃣</span>
+          <span class="mode-label">HSK 6</span>
+        </button>
+        <button class="mode-btn" data-mode="chars" type="button">
+          <span class="mode-icon">字</span>
+          <span class="mode-label">Иероглифы</span>
         </button>
         <button class="mode-btn" data-mode="due" type="button">
           <span class="mode-icon">🔄</span>
@@ -638,6 +513,8 @@
         <button data-level="3" type="button">HSK 3</button>
         <button data-level="4" type="button">HSK 4</button>
         <button data-level="5" type="button">HSK 5</button>
+        <button data-level="6" type="button">HSK 6</button>
+        <button data-level="chars" type="button">字</button>
         <button data-level="fav" class="fav-tab" type="button">⭐ Избранное</button>
       </div>
 

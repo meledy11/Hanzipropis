@@ -1,4 +1,4 @@
-/* trainer.js — Тренажёр + Карточки + Избранное
+/* trainer.js — Тренажёр каллиграфии + Карточки + Избранное
    Зависимости: dictionary-data.js (window.HSK_DICT), pinyinPro, HanziWriter
 */
 (function () {
@@ -12,7 +12,7 @@
   // ============================================================
   // ОЗВУЧКА
   // ============================================================
-  const AUDIO_DIRS = ['Audio/hsk1/','Audio/hsk2/','Audio/hsk3/','Audio/hsk4/','Audio/hsk5/','Audio/'];
+  const AUDIO_DIRS = ['Audio/hsk1/','Audio/hsk2/','Audio/hsk3/','Audio/hsk4/','Audio/hsk5/','Audio/hsk6/','Audio/'];
   const AUDIO_PREFIX = 'cmn-';
   const audioCache = new Map();
   let currentPlayingAudio = null;
@@ -170,7 +170,7 @@
   function getLevel(level) {
     return getDict()['hsk' + level] || { words: [], pinyin: {}, ru: {}, emoji: {}, example: {} };
   }
-  function getLevels() { return [1, 2, 3, 4, 5].filter(l => getDict()['hsk' + l]); }
+  function getLevels() { return [1, 2, 3, 4, 5, 6].filter(l => getDict()['hsk' + l]); }
 
   function findWordInfo(word) {
     for (const lvl of getLevels()) {
@@ -191,6 +191,9 @@
   function getCharMeaning(char) {
     const direct = findWordInfo(char);
     if (direct && direct.meaning) return direct.meaning;
+    // Проверяем список иероглифов HSK 6
+    const d6c = getDict()['hsk6_chars'];
+    if (d6c && d6c.ru && d6c.ru[char]) return d6c.ru[char];
     for (const lvl of getLevels()) {
       const d = getLevel(lvl);
       for (const w of d.words) {
@@ -203,6 +206,8 @@
   function getPinyin(char) {
     const direct = findWordInfo(char);
     if (direct && direct.pinyin) return direct.pinyin;
+    const d6c = getDict()['hsk6_chars'];
+    if (d6c && d6c.pinyin && d6c.pinyin[char]) return d6c.pinyin[char];
     try {
       if (window.pinyinPro && window.pinyinPro.pinyin) {
         return window.pinyinPro.pinyin(char, { toneType: 'symbol' });
@@ -338,8 +343,13 @@
     return examples.sort((a, b) => a.word.length - b.word.length);
   }
 
-  function getCategoryChars(level) {
-    const d = getLevel(level);
+  function getCategoryChars(levelKey) {
+    if (levelKey === 'chars') {
+      const d = getDict()['hsk6_chars'];
+      return d && d.words ? [...d.words] : [];
+    }
+    const lvl = parseInt(levelKey, 10);
+    const d = getLevel(lvl);
     const chars = new Set();
     d.words.forEach(word => { [...word].forEach(ch => { if (/\p{Script=Han}/u.test(ch)) chars.add(ch); }); });
     return [...chars];
@@ -380,7 +390,6 @@
   // Карточки
   let cardsLevel = '1';
   let cardsQuery = '';
-  let cardsData = [];
 
   function cacheDom() {
     dom = {
@@ -414,7 +423,6 @@
       examplesMeaning: document.getElementById('examplesMeaning'),
       examplesList: document.getElementById('examplesList'),
       examplesClose: document.getElementById('examplesClose'),
-      // Карточки
       viewTrainer: document.getElementById('viewTrainer'),
       viewCards: document.getElementById('viewCards'),
       tabTrainer: document.getElementById('tabTrainer'),
@@ -425,7 +433,6 @@
       levelTabs: document.getElementById('levelTabs'),
       cardsGrid: document.getElementById('cardsGrid'),
       cardsInfo: document.getElementById('cardsInfo'),
-      // Модалка карточки иероглифа
       ccModal: document.getElementById('charCardModal'),
       ccChar: document.getElementById('ccChar'),
       ccPinyin: document.getElementById('ccPinyin'),
@@ -559,7 +566,7 @@
   }
 
   // ============================================================
-  // ЗАГРУЗКА ИЕРОГЛИФА (в тренажёре)
+  // ЗАГРУЗКА ИЕРОГЛИФА (тренажёр)
   // ============================================================
   function loadCharacter(index, opts) {
     opts = opts || {};
@@ -888,6 +895,23 @@
     updateStats();
   }
 
+  function loadCharsCategory() {
+    stopAutoplay();
+    const chars = getCategoryChars('chars');
+    if (chars.length === 0) {
+      currentItems = [];
+      if (dom.instruction) dom.instruction.textContent = '⚠️ Иероглифы HSK 6 не загружены';
+      return;
+    }
+    currentItems = shuffle(chars).map(char => ({ char, pinyin: getPinyin(char), meaning: getCharMeaning(char) }));
+    currentIndex = 0;
+    score = 0; combo = 0;
+    updateUI();
+    if (dom.category) dom.category.textContent = '字 · ' + chars.length + ' иероглифов';
+    loadCharacter(0);
+    updateStats();
+  }
+
   function startDueReview() {
     stopAutoplay();
     const due = Progress.getDueForReview();
@@ -922,7 +946,6 @@
     return true;
   }
 
-  // Загрузить один иероглиф в тренажёр (для кнопки «Тренировать»)
   function trainSingleChar(char) {
     stopAutoplay();
     const pinyin = getPinyin(char);
@@ -947,14 +970,15 @@
     setActiveMode(mode);
     if (mode === 'due') startDueReview();
     else if (mode === 'weak') startWeakSpots();
+    else if (mode === 'chars') loadCharsCategory();
     else {
       const lvl = parseInt(mode, 10);
-      if (lvl >= 1 && lvl <= 5) loadCategory(lvl);
+      if (lvl >= 1 && lvl <= 6) loadCategory(lvl);
     }
   }
 
   // ============================================================
-  // ВКЛАДКИ: ТРЕНАЖЁР ↔ КАРТОЧКИ
+  // ВКЛАДКИ
   // ============================================================
   function showView(view) {
     if (view === 'trainer') {
@@ -974,20 +998,9 @@
   // ============================================================
   // КАРТОЧКИ
   // ============================================================
-  function buildCardsData() {
-    const allChars = new Set();
-    for (const lvl of getLevels()) {
-      getLevel(lvl).words.forEach(word => {
-        [...word].forEach(ch => { if (/\p{Script=Han}/u.test(ch)) allChars.add(ch); });
-      });
-    }
-    return [...allChars];
-  }
-
   function getCharsForLevel(levelKey) {
-    if (levelKey === 'fav') {
-      return [...Favorites.set];
-    }
+    if (levelKey === 'fav') return [...Favorites.set];
+    if (levelKey === 'chars') return getCategoryChars('chars');
     const lvl = parseInt(levelKey, 10);
     if (!lvl) return [];
     return getCategoryChars(lvl);
@@ -1005,7 +1018,6 @@
     if (!dom.cardsGrid) return;
     let chars = getCharsForLevel(cardsLevel);
 
-    // Поиск
     const q = cardsQuery.trim();
     if (q) {
       const nq = normalizeQuery(q);
@@ -1059,7 +1071,8 @@
     if (dom.cardsInfo) {
       let info = chars.length + ' иероглифов';
       if (cardsLevel === 'fav') info += ' в избранном';
-      else if (cardsLevel !== '0') info += ' · HSK ' + cardsLevel;
+      else if (cardsLevel === 'chars') info += ' · HSK 6 · иероглифы';
+      else info += ' · HSK ' + cardsLevel;
       if (q) info += ' · фильтр: "' + q + '"';
       dom.cardsInfo.textContent = info;
     }
@@ -1074,17 +1087,14 @@
     dom.ccPinyin.textContent = getPinyin(char);
     dom.ccMeaning.textContent = getCharMeaning(char);
 
-    // Избранное
     const fav = Favorites.has(char);
     dom.ccFavBtn.textContent = fav ? '⭐' : '☆';
     dom.ccFavBtn.classList.toggle('active', fav);
     dom.ccFavBtn.dataset.char = char;
 
-    // Кнопки
     dom.ccSpeakBtn.dataset.char = char;
     dom.ccTrainBtn.dataset.char = char;
 
-    // Слова с иероглифом
     const words = getExamples(char);
     dom.ccWords.innerHTML = '';
     dom.ccWordsTitle.textContent = '📖 Слова с этим иероглифом (' + words.length + '):';
@@ -1133,20 +1143,10 @@
     Progress.load();
     Favorites.load();
 
-    // Тренажёр — кнопки
-    if (dom.hintBtn) dom.hintBtn.addEventListener('click', () => {
-      if (autoplayActive) stopAutoplay();
-      showHint();
-    });
-    if (dom.nextBtn) dom.nextBtn.addEventListener('click', () => {
-      if (autoplayActive) stopAutoplay();
-      nextCharacter();
-    });
+    if (dom.hintBtn) dom.hintBtn.addEventListener('click', () => { if (autoplayActive) stopAutoplay(); showHint(); });
+    if (dom.nextBtn) dom.nextBtn.addEventListener('click', () => { if (autoplayActive) stopAutoplay(); nextCharacter(); });
     if (dom.examplesBtn) dom.examplesBtn.addEventListener('click', showExamples);
-    if (dom.clearMarkerBtn) dom.clearMarkerBtn.addEventListener('click', () => {
-      clearMarker();
-      showFloating('🧹 Очищено');
-    });
+    if (dom.clearMarkerBtn) dom.clearMarkerBtn.addEventListener('click', () => { clearMarker(); showFloating('🧹 Очищено'); });
     if (dom.markerToggle) dom.markerToggle.addEventListener('click', toggleMarker);
     if (dom.autoplayBtn) dom.autoplayBtn.addEventListener('click', startAutoplay);
 
@@ -1154,9 +1154,7 @@
       if (currentItems.length > 0) speakChar(currentItems[currentIndex].char);
     });
 
-    if (dom.examplesClose) dom.examplesClose.addEventListener('click', () => {
-      dom.examplesModal.classList.remove('show');
-    });
+    if (dom.examplesClose) dom.examplesClose.addEventListener('click', () => dom.examplesModal.classList.remove('show'));
     if (dom.examplesModal) dom.examplesModal.addEventListener('click', (e) => {
       if (e.target === dom.examplesModal) dom.examplesModal.classList.remove('show');
     });
@@ -1165,11 +1163,9 @@
       btn.addEventListener('click', () => switchMode(btn.dataset.mode));
     });
 
-    // Вкладки верхние
     if (dom.tabTrainer) dom.tabTrainer.addEventListener('click', () => showView('trainer'));
     if (dom.tabCards) dom.tabCards.addEventListener('click', () => showView('cards'));
 
-    // Поиск карточек
     if (dom.cardsSearchInput) {
       let t = 0;
       dom.cardsSearchInput.addEventListener('input', () => {
@@ -1191,7 +1187,6 @@
       });
     }
 
-    // Уровни карточек
     if (dom.levelTabs) {
       dom.levelTabs.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-level]');
@@ -1203,19 +1198,10 @@
       });
     }
 
-    // Модалка карточки иероглифа
     if (dom.ccClose) dom.ccClose.addEventListener('click', closeCharCard);
-    if (dom.ccModal) dom.ccModal.addEventListener('click', (e) => {
-      if (e.target === dom.ccModal) closeCharCard();
-    });
-    if (dom.ccChar) dom.ccChar.addEventListener('click', () => {
-      const ch = dom.ccChar.textContent;
-      if (ch) speakChar(ch);
-    });
-    if (dom.ccSpeakBtn) dom.ccSpeakBtn.addEventListener('click', (e) => {
-      const ch = e.currentTarget.dataset.char;
-      if (ch) speakChar(ch);
-    });
+    if (dom.ccModal) dom.ccModal.addEventListener('click', (e) => { if (e.target === dom.ccModal) closeCharCard(); });
+    if (dom.ccChar) dom.ccChar.addEventListener('click', () => { const ch = dom.ccChar.textContent; if (ch) speakChar(ch); });
+    if (dom.ccSpeakBtn) dom.ccSpeakBtn.addEventListener('click', (e) => { const ch = e.currentTarget.dataset.char; if (ch) speakChar(ch); });
     if (dom.ccFavBtn) dom.ccFavBtn.addEventListener('click', (e) => {
       const ch = e.currentTarget.dataset.char;
       if (!ch) return;
@@ -1258,10 +1244,7 @@
     switchMode('1');
     setInterval(updateStats, 60000);
 
-    window.addEventListener('beforeunload', () => {
-      autoplayActive = false;
-      autoplayCancelToken++;
-    });
+    window.addEventListener('beforeunload', () => { autoplayActive = false; autoplayCancelToken++; });
 
     initialized = true;
   }

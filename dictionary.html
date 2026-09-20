@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>HSK 1 · 2 · 3 · 4 · 5 — Словари с озвучкой</title>
+<title>HSK 1 · 2 · 3 · 4 · 5 · 6 — Словари с озвучкой</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -35,11 +35,11 @@
   }
   .tab-btn {
     flex: 1;
-    min-width: 100px;
-    padding: 14px 20px;
+    min-width: 90px;
+    padding: 12px 14px;
     border: none;
     border-radius: 12px;
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     transition: 0.3s;
@@ -225,11 +225,7 @@
     background: transparent;
   }
   .search-box input::placeholder { color: #8fa3bb; }
-  .search-box .icon {
-    font-size: 18px;
-    color: #4a5f78;
-    line-height: 1;
-  }
+  .search-box .icon { font-size: 18px; color: #4a5f78; line-height: 1; }
   .search-box .clear-btn {
     border: 0;
     background: transparent;
@@ -262,7 +258,7 @@
     margin: 4px 4px 12px;
   }
 
-  /* ===== ВОЗВРАТ К ПРОПИСЯМ ===== */
+  /* ===== ВОЗВРАТ ===== */
   .back-to-worksheets {
     position: fixed;
     top: calc(10px + env(safe-area-inset-top));
@@ -303,14 +299,14 @@
   /* ===== АДАПТИВ ===== */
   @media screen and (max-width: 780px) {
     .vocab-grid { grid-template-columns: repeat(2, 1fr); }
-    .tab-btn { font-size: 15px; padding: 12px 14px; min-width: 80px; }
+    .tab-btn { font-size: 13px; padding: 10px 8px; min-width: 70px; }
     .card .chinese { font-size: 36px; }
     .card .pinyin { font-size: 20px; }
   }
   @media screen and (max-width: 480px) {
     .vocab-grid { grid-template-columns: 1fr; }
     .page { padding: 14px 10px; }
-    .tab-btn { font-size: 13px; padding: 10px 8px; min-width: 60px; }
+    .tab-btn { font-size: 12px; padding: 8px 6px; min-width: 55px; }
     .tabs { flex-wrap: wrap; }
     .card .chinese { font-size: 40px; }
     .card .pinyin { font-size: 22px; }
@@ -371,13 +367,15 @@
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="hsk1">📘 HSK 1 · 300 слов</button>
-    <button class="tab-btn" data-tab="hsk2">📗 HSK 2 · 200 слов</button>
-    <button class="tab-btn" data-tab="hsk3">📙 HSK 3 · 500 слов</button>
-    <button class="tab-btn" data-tab="hsk4">📕 HSK 4 · 1000 слов</button>
-    <button class="tab-btn" data-tab="hsk5">📓 HSK 5 · 1300 слов</button>
+    <button class="tab-btn active" data-tab="hsk1">📘 HSK 1</button>
+    <button class="tab-btn" data-tab="hsk2">📗 HSK 2</button>
+    <button class="tab-btn" data-tab="hsk3">📙 HSK 3</button>
+    <button class="tab-btn" data-tab="hsk4">📕 HSK 4</button>
+    <button class="tab-btn" data-tab="hsk5">📓 HSK 5</button>
+    <button class="tab-btn" data-tab="hsk6">📔 HSK 6</button>
   </div>
 
+  <!-- HSK 1 -->
   <div id="tab-hsk1" class="tab-content active">
     <div class="page"><div class="header"><h1>📘 HSK 1 · Словарь</h1><span class="block-tag">Блок 1 · 1–50</span></div><div class="vocab-grid" id="hsk1-block1"></div><div class="footer-note">HSK 1 · 300 слов · для печати А4</div></div>
     <div class="page"><div class="header"><h1>📘 HSK 1 · Словарь</h1><span class="block-tag">Блок 2 · 51–100</span></div><div class="vocab-grid" id="hsk1-block2"></div><div class="footer-note">HSK 1 · 300 слов · для печати А4</div></div>
@@ -387,6 +385,7 @@
     <div class="page"><div class="header"><h1>📘 HSK 1 · Словарь</h1><span class="block-tag">Блок 6 · 251–300</span></div><div class="vocab-grid" id="hsk1-block6"></div><div class="footer-note">HSK 1 · 300 слов · для печати А4</div></div>
   </div>
 
+  <!-- HSK 2 -->
   <div id="tab-hsk2" class="tab-content">
     <div class="page"><div class="header"><h1>📗 HSK 2 · Словарь</h1><span class="block-tag">Блок 1 · 1–50</span></div><div class="vocab-grid" id="hsk2-block1"></div><div class="footer-note">HSK 2 · 200 слов · для печати А4</div></div>
     <div class="page"><div class="header"><h1>📗 HSK 2 · Словарь</h1><span class="block-tag">Блок 2 · 51–100</span></div><div class="vocab-grid" id="hsk2-block2"></div><div class="footer-note">HSK 2 · 200 слов · для печати А4</div></div>
@@ -394,6 +393,7 @@
     <div class="page"><div class="header"><h1>📗 HSK 2 · Словарь</h1><span class="block-tag">Блок 4 · 151–200</span></div><div class="vocab-grid" id="hsk2-block4"></div><div class="footer-note">HSK 2 · 200 слов · для печати А4</div></div>
   </div>
 
+  <!-- HSK 3 -->
   <div id="tab-hsk3" class="tab-content">
     <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 1 · 1–50</span></div><div class="vocab-grid" id="hsk3-block1"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
     <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 2 · 51–100</span></div><div class="vocab-grid" id="hsk3-block2"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
@@ -407,6 +407,7 @@
     <div class="page"><div class="header"><h1>📙 HSK 3 · Словарь</h1><span class="block-tag">Блок 10 · 451–500</span></div><div class="vocab-grid" id="hsk3-block10"></div><div class="footer-note">HSK 3 · 500 слов · для печати А4</div></div>
   </div>
 
+  <!-- HSK 4 -->
   <div id="tab-hsk4" class="tab-content">
     <div class="page"><div class="header"><h1>📕 HSK 4 · Словарь</h1><span class="block-tag">Блок 1 · 1–50</span></div><div class="vocab-grid" id="hsk4-block1"></div><div class="footer-note">HSK 4 · 1000 слов · для печати А4</div></div>
     <div class="page"><div class="header"><h1>📕 HSK 4 · Словарь</h1><span class="block-tag">Блок 2 · 51–100</span></div><div class="vocab-grid" id="hsk4-block2"></div><div class="footer-note">HSK 4 · 1000 слов · для печати А4</div></div>
@@ -430,6 +431,7 @@
     <div class="page"><div class="header"><h1>📕 HSK 4 · Словарь</h1><span class="block-tag">Блок 20 · 951–1000</span></div><div class="vocab-grid" id="hsk4-block20"></div><div class="footer-note">HSK 4 · 1000 слов · для печати А4</div></div>
   </div>
 
+  <!-- HSK 5 -->
   <div id="tab-hsk5" class="tab-content">
     <div class="page"><div class="header"><h1>📓 HSK 5 · Словарь</h1><span class="block-tag">Блок 1 · 1–50</span></div><div class="vocab-grid" id="hsk5-block1"></div><div class="footer-note">HSK 5 · 1300 слов · для печати А4</div></div>
     <div class="page"><div class="header"><h1>📓 HSK 5 · Словарь</h1><span class="block-tag">Блок 2 · 51–100</span></div><div class="vocab-grid" id="hsk5-block2"></div><div class="footer-note">HSK 5 · 1300 слов · для печати А4</div></div>
@@ -459,6 +461,60 @@
     <div class="page"><div class="header"><h1>📓 HSK 5 · Словарь</h1><span class="block-tag">Блок 26 · 1251–1300</span></div><div class="vocab-grid" id="hsk5-block26"></div><div class="footer-note">HSK 5 · 1300 слов · для печати А4</div></div>
   </div>
 
+  <!-- HSK 6 -->
+  <div id="tab-hsk6" class="tab-content">
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 1 · 1–50</span></div><div class="vocab-grid" id="hsk6-block1"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 2 · 51–100</span></div><div class="vocab-grid" id="hsk6-block2"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 3 · 101–150</span></div><div class="vocab-grid" id="hsk6-block3"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 4 · 151–200</span></div><div class="vocab-grid" id="hsk6-block4"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 5 · 201–250</span></div><div class="vocab-grid" id="hsk6-block5"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 6 · 251–300</span></div><div class="vocab-grid" id="hsk6-block6"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 7 · 301–350</span></div><div class="vocab-grid" id="hsk6-block7"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 8 · 351–400</span></div><div class="vocab-grid" id="hsk6-block8"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 9 · 401–450</span></div><div class="vocab-grid" id="hsk6-block9"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 10 · 451–500</span></div><div class="vocab-grid" id="hsk6-block10"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 11 · 501–550</span></div><div class="vocab-grid" id="hsk6-block11"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 12 · 551–600</span></div><div class="vocab-grid" id="hsk6-block12"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 13 · 601–650</span></div><div class="vocab-grid" id="hsk6-block13"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 14 · 651–700</span></div><div class="vocab-grid" id="hsk6-block14"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 15 · 701–750</span></div><div class="vocab-grid" id="hsk6-block15"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 16 · 751–800</span></div><div class="vocab-grid" id="hsk6-block16"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 17 · 801–850</span></div><div class="vocab-grid" id="hsk6-block17"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 18 · 851–900</span></div><div class="vocab-grid" id="hsk6-block18"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 19 · 901–950</span></div><div class="vocab-grid" id="hsk6-block19"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 20 · 951–1000</span></div><div class="vocab-grid" id="hsk6-block20"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 21 · 1001–1050</span></div><div class="vocab-grid" id="hsk6-block21"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 22 · 1051–1100</span></div><div class="vocab-grid" id="hsk6-block22"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 23 · 1101–1150</span></div><div class="vocab-grid" id="hsk6-block23"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 24 · 1151–1200</span></div><div class="vocab-grid" id="hsk6-block24"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 25 · 1201–1250</span></div><div class="vocab-grid" id="hsk6-block25"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 26 · 1251–1300</span></div><div class="vocab-grid" id="hsk6-block26"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 27 · 1301–1350</span></div><div class="vocab-grid" id="hsk6-block27"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 28 · 1351–1400</span></div><div class="vocab-grid" id="hsk6-block28"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 29 · 1401–1450</span></div><div class="vocab-grid" id="hsk6-block29"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 30 · 1451–1500</span></div><div class="vocab-grid" id="hsk6-block30"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 31 · 1501–1550</span></div><div class="vocab-grid" id="hsk6-block31"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 32 · 1551–1600</span></div><div class="vocab-grid" id="hsk6-block32"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 33 · 1601–1650</span></div><div class="vocab-grid" id="hsk6-block33"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 34 · 1651–1700</span></div><div class="vocab-grid" id="hsk6-block34"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 35 · 1701–1750</span></div><div class="vocab-grid" id="hsk6-block35"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 36 · 1751–1800</span></div><div class="vocab-grid" id="hsk6-block36"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 37 · 1801–1850</span></div><div class="vocab-grid" id="hsk6-block37"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 38 · 1851–1900</span></div><div class="vocab-grid" id="hsk6-block38"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 39 · 1901–1950</span></div><div class="vocab-grid" id="hsk6-block39"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 40 · 1951–2000</span></div><div class="vocab-grid" id="hsk6-block40"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 41 · 2001–2050</span></div><div class="vocab-grid" id="hsk6-block41"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 42 · 2051–2100</span></div><div class="vocab-grid" id="hsk6-block42"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 43 · 2101–2150</span></div><div class="vocab-grid" id="hsk6-block43"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 44 · 2151–2200</span></div><div class="vocab-grid" id="hsk6-block44"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 45 · 2201–2250</span></div><div class="vocab-grid" id="hsk6-block45"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 46 · 2251–2300</span></div><div class="vocab-grid" id="hsk6-block46"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 47 · 2301–2350</span></div><div class="vocab-grid" id="hsk6-block47"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 48 · 2351–2400</span></div><div class="vocab-grid" id="hsk6-block48"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 49 · 2401–2450</span></div><div class="vocab-grid" id="hsk6-block49"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+    <div class="page"><div class="header"><h1>📔 HSK 6 · Словарь</h1><span class="block-tag">Блок 50 · 2451–2500</span></div><div class="vocab-grid" id="hsk6-block50"></div><div class="footer-note">HSK 6 · слова · для печати А4</div></div>
+  </div>
+
   <div id="search-results" class="tab-content">
     <div class="search-title" id="searchTitle"></div>
     <div class="vocab-grid" id="searchGrid"></div>
@@ -469,15 +525,10 @@
 <script src="dictionary-data.js"></script>
 <script>
 // ================================================================
-// АУДИО: MP3 из Audio/ + fallback на браузерный голос
+// АУДИО
 // ================================================================
 const AUDIO_DIRS = [
-  'Audio/hsk1/',
-  'Audio/hsk2/',
-  'Audio/hsk3/',
-  'Audio/hsk4/',
-  'Audio/hsk5/',
-  'Audio/'
+  'Audio/hsk1/','Audio/hsk2/','Audio/hsk3/','Audio/hsk4/','Audio/hsk5/','Audio/hsk6/','Audio/'
 ];
 const AUDIO_PREFIX = 'cmn-';
 const audioCache = new Map();
@@ -497,10 +548,7 @@ function speakWithBrowser(text) {
   if (!('speechSynthesis' in window)) return;
   try { speechSynthesis.cancel(); } catch (e) {}
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'zh-CN';
-  u.rate = 0.85;
-  u.pitch = 1;
-  u.volume = 1;
+  u.lang = 'zh-CN'; u.rate = 0.85; u.pitch = 1; u.volume = 1;
   if (zhVoice) u.voice = zhVoice;
   speechSynthesis.speak(u);
 }
@@ -523,17 +571,8 @@ function tryNextCandidate(dirs, index, text, key) {
   const audio = new Audio(dirs[index] + AUDIO_PREFIX + text + '.mp3');
   audio.preload = 'auto';
   let resolved = false;
-  const onError = () => {
-    if (resolved) return;
-    resolved = true;
-    tryNextCandidate(dirs, index + 1, text, key);
-  };
-  const onCanPlay = () => {
-    if (resolved) return;
-    resolved = true;
-    audioCache.set(key, { available: true, audio });
-    playAudio(audio, text, key);
-  };
+  const onError = () => { if (resolved) return; resolved = true; tryNextCandidate(dirs, index + 1, text, key); };
+  const onCanPlay = () => { if (resolved) return; resolved = true; audioCache.set(key, { available: true, audio }); playAudio(audio, text, key); };
   audio.addEventListener('error', onError, { once: true });
   audio.addEventListener('canplaythrough', onCanPlay, { once: true });
   audio.addEventListener('loadeddata', onCanPlay, { once: true });
@@ -557,13 +596,12 @@ function playAudio(audio, text, key) {
 }
 
 // ================================================================
-// ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+// ВКЛАДКИ
 // ================================================================
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', function () {
     if (document.body.classList.contains('searching')) {
-      const input = document.getElementById('searchInput');
-      input.value = '';
+      document.getElementById('searchInput').value = '';
       document.getElementById('searchBox').classList.remove('has-value');
       document.getElementById('searchCount').textContent = '';
       document.body.classList.remove('searching');
@@ -582,45 +620,22 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // ================================================================
 const DICT = window.HSK_DICT || {};
 
-const hsk1   = DICT.hsk1?.words   || [];
-const py1    = DICT.hsk1?.pinyin  || {};
-const ru1    = DICT.hsk1?.ru      || {};
-const emoji1 = DICT.hsk1?.emoji   || {};
-const ex1    = DICT.hsk1?.example || {};
-
-const hsk2   = DICT.hsk2?.words   || [];
-const py2    = DICT.hsk2?.pinyin  || {};
-const ru2    = DICT.hsk2?.ru      || {};
-const emoji2 = DICT.hsk2?.emoji   || {};
-const ex2    = DICT.hsk2?.example || {};
-
-const hsk3   = DICT.hsk3?.words   || [];
-const py3    = DICT.hsk3?.pinyin  || {};
-const ru3    = DICT.hsk3?.ru      || {};
-const emoji3 = DICT.hsk3?.emoji   || {};
-const ex3    = DICT.hsk3?.example || {};
-
-const hsk4   = DICT.hsk4?.words   || [];
-const py4    = DICT.hsk4?.pinyin  || {};
-const ru4    = DICT.hsk4?.ru      || {};
-const emoji4 = DICT.hsk4?.emoji   || {};
-const ex4    = DICT.hsk4?.example || {};
-
-const hsk5   = DICT.hsk5?.words   || [];
-const py5    = DICT.hsk5?.pinyin  || {};
-const ru5    = DICT.hsk5?.ru      || {};
-const emoji5 = DICT.hsk5?.emoji   || {};
-const ex5    = DICT.hsk5?.example || {};
+const hsk1 = DICT.hsk1?.words || []; const py1 = DICT.hsk1?.pinyin || {}; const ru1 = DICT.hsk1?.ru || {}; const emoji1 = DICT.hsk1?.emoji || {}; const ex1 = DICT.hsk1?.example || {};
+const hsk2 = DICT.hsk2?.words || []; const py2 = DICT.hsk2?.pinyin || {}; const ru2 = DICT.hsk2?.ru || {}; const emoji2 = DICT.hsk2?.emoji || {}; const ex2 = DICT.hsk2?.example || {};
+const hsk3 = DICT.hsk3?.words || []; const py3 = DICT.hsk3?.pinyin || {}; const ru3 = DICT.hsk3?.ru || {}; const emoji3 = DICT.hsk3?.emoji || {}; const ex3 = DICT.hsk3?.example || {};
+const hsk4 = DICT.hsk4?.words || []; const py4 = DICT.hsk4?.pinyin || {}; const ru4 = DICT.hsk4?.ru || {}; const emoji4 = DICT.hsk4?.emoji || {}; const ex4 = DICT.hsk4?.example || {};
+const hsk5 = DICT.hsk5?.words || []; const py5 = DICT.hsk5?.pinyin || {}; const ru5 = DICT.hsk5?.ru || {}; const emoji5 = DICT.hsk5?.emoji || {}; const ex5 = DICT.hsk5?.example || {};
+const hsk6 = DICT.hsk6?.words || []; const py6 = DICT.hsk6?.pinyin || {}; const ru6 = DICT.hsk6?.ru || {}; const emoji6 = DICT.hsk6?.emoji || {}; const ex6 = DICT.hsk6?.example || {};
 
 // ================================================================
-// РЕНДЕР КАРТОЧЕК
+// РЕНДЕР
 // ================================================================
-function renderCards(containerId, words, getPinyin, getRu, getEmoji, getExample) {
+function renderCards(containerId, words, getPy, getRu, getEmoji, getExample) {
   const container = document.getElementById(containerId);
   if (!container) return;
   const frag = document.createDocumentFragment();
   for (const word of words) {
-    const pinyin = getPinyin(word) || '';
+    const pinyin = getPy(word) || '';
     const ru = getRu(word) || '';
     const emoji = getEmoji(word) || '📌';
     const example = (getExample && getExample(word)) || '';
@@ -630,7 +645,6 @@ function renderCards(containerId, words, getPinyin, getRu, getEmoji, getExample)
       exZh = parts[0] || '';
       ruEx = parts.slice(1).join(' — ') || '';
     }
-
     const card = document.createElement('div');
     card.className = 'card';
     card.innerHTML = `
@@ -662,17 +676,15 @@ function renderBlocks(prefix, words, getPy, getRu, getEmoji, getEx, blocksCount)
   }
 }
 
-// ================================================================
-// ЗАПУСК РЕНДЕРА
-// ================================================================
 renderBlocks('hsk1', hsk1, w => py1[w], w => ru1[w], w => emoji1[w], w => ex1[w], 6);
 renderBlocks('hsk2', hsk2, w => py2[w], w => ru2[w], w => emoji2[w], w => ex2[w], 4);
 renderBlocks('hsk3', hsk3, w => py3[w], w => ru3[w], w => emoji3[w], w => ex3[w], 10);
 renderBlocks('hsk4', hsk4, w => py4[w], w => ru4[w], w => emoji4[w], w => ex4[w], 20);
 renderBlocks('hsk5', hsk5, w => py5[w], w => ru5[w], w => emoji5[w], w => ex5[w], 26);
+renderBlocks('hsk6', hsk6, w => py6[w], w => ru6[w], w => emoji6[w], w => ex6[w], 50);
 
 // ================================================================
-// ДЕЛЕГИРОВАНИЕ КЛИКОВ ПО ОЗВУЧКЕ
+// КЛИКИ ОЗВУЧКИ
 // ================================================================
 document.addEventListener('click', e => {
   const sayEl = e.target.closest('[data-say]');
@@ -698,7 +710,8 @@ document.addEventListener('click', e => {
     ...hsk2.map(w => ({ word: w, level: 2, py: py2[w] || '', ru: ru2[w] || '', emoji: emoji2[w] || '📌', ex: ex2[w] || '' })),
     ...hsk3.map(w => ({ word: w, level: 3, py: py3[w] || '', ru: ru3[w] || '', emoji: emoji3[w] || '📌', ex: ex3[w] || '' })),
     ...hsk4.map(w => ({ word: w, level: 4, py: py4[w] || '', ru: ru4[w] || '', emoji: emoji4[w] || '📌', ex: ex4[w] || '' })),
-    ...hsk5.map(w => ({ word: w, level: 5, py: py5[w] || '', ru: ru5[w] || '', emoji: emoji5[w] || '📌', ex: ex5[w] || '' }))
+    ...hsk5.map(w => ({ word: w, level: 5, py: py5[w] || '', ru: ru5[w] || '', emoji: emoji5[w] || '📌', ex: ex5[w] || '' })),
+    ...hsk6.map(w => ({ word: w, level: 6, py: py6[w] || '', ru: ru6[w] || '', emoji: emoji6[w] || '📌', ex: ex6[w] || '' }))
   ];
 
   const norm = (s) => String(s ?? '')
@@ -724,10 +737,6 @@ document.addEventListener('click', e => {
     return out;
   }
 
-  function levelLabel(level) {
-    return 'HSK ' + level;
-  }
-
   function renderResultCard(item) {
     const card = document.createElement('div');
     card.className = 'card';
@@ -743,7 +752,7 @@ document.addEventListener('click', e => {
         <span class="chinese" data-say="${item.word}">${item.word}</span>
         <span class="pinyin">${item.py}</span>
         <button class="speaker-btn" data-say="${item.word}" title="Озвучить">🔊</button>
-        <span style="font-size:11px;color:#8fa3bb;margin-left:auto;background:#eef2f7;padding:2px 8px;border-radius:10px;font-weight:600">${levelLabel(item.level)}</span>
+        <span style="font-size:11px;color:#8fa3bb;margin-left:auto;background:#eef2f7;padding:2px 8px;border-radius:10px;font-weight:600">HSK ${item.level}</span>
       </div>
       <div class="russian">${item.ru}</div>
       ${exZh ? `<div class="example" data-say="${exZh}">
@@ -757,7 +766,6 @@ document.addEventListener('click', e => {
 
   function runSearch() {
     const q = input.value.trim();
-
     if (!q) {
       document.body.classList.remove('searching');
       box.classList.remove('has-value');
@@ -766,66 +774,36 @@ document.addEventListener('click', e => {
       sessionStorage.removeItem('dict-search');
       return;
     }
-
     box.classList.add('has-value');
     document.body.classList.add('searching');
-
     const items = searchAll(q);
     resultsTitle.textContent = `Результаты поиска: ${items.length}`;
-
-    const byLevel = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+    const byLevel = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
     items.forEach(it => byLevel[it.level].push(it));
-
     countEl.innerHTML = items.length
-      ? `<b>${items.length}</b> найдено — HSK 1: ${byLevel[1].length}, HSK 2: ${byLevel[2].length}, HSK 3: ${byLevel[3].length}, HSK 4: ${byLevel[4].length}, HSK 5: ${byLevel[5].length}`
+      ? `<b>${items.length}</b> найдено — HSK 1: ${byLevel[1].length}, HSK 2: ${byLevel[2].length}, HSK 3: ${byLevel[3].length}, HSK 4: ${byLevel[4].length}, HSK 5: ${byLevel[5].length}, HSK 6: ${byLevel[6].length}`
       : `Ничего не найдено`;
-
     resultsGrid.innerHTML = '';
     if (!items.length) {
-      resultsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 12px;color:#8fa3bb">Попробуйте другой запрос — например, «吃», «chi» или «есть».</div>';
+      resultsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 12px;color:#8fa3bb">Попробуйте другой запрос.</div>';
     } else {
       const frag = document.createDocumentFragment();
-      [...byLevel[1], ...byLevel[2], ...byLevel[3], ...byLevel[4], ...byLevel[5]]
+      [...byLevel[1], ...byLevel[2], ...byLevel[3], ...byLevel[4], ...byLevel[5], ...byLevel[6]]
         .forEach(it => frag.appendChild(renderResultCard(it)));
       resultsGrid.appendChild(frag);
     }
-
     sessionStorage.setItem('dict-search', input.value);
   }
 
   let timer = 0;
-  input.addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(runSearch, 180);
-  });
-
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      input.value = '';
-      runSearch();
-      input.blur();
-    }
-  });
-
-  clearBtn.addEventListener('click', () => {
-    input.value = '';
-    runSearch();
-    input.focus();
-  });
-
+  input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(runSearch, 180); });
+  input.addEventListener('keydown', e => { if (e.key === 'Escape') { input.value = ''; runSearch(); input.blur(); } });
+  clearBtn.addEventListener('click', () => { input.value = ''; runSearch(); input.focus(); });
   document.addEventListener('keydown', e => {
-    if (e.key === '/' && document.activeElement !== input) {
-      e.preventDefault();
-      input.focus();
-      input.select();
-    }
+    if (e.key === '/' && document.activeElement !== input) { e.preventDefault(); input.focus(); input.select(); }
   });
-
   const savedQ = sessionStorage.getItem('dict-search') || '';
-  if (savedQ) {
-    input.value = savedQ;
-    runSearch();
-  }
+  if (savedQ) { input.value = savedQ; runSearch(); }
 })();
 
 // ================================================================
@@ -840,13 +818,10 @@ document.addEventListener('click', e => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(err =>
-      console.warn('SW не зарегистрирован:', err)
-    );
+    navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW не зарегистрирован:', err));
   });
 }
 
-// Alt+G — на прописи
 document.addEventListener('keydown', e => {
   if (e.altKey && (e.key === 'g' || e.key === 'G' || e.key === 'п' || e.key === 'П')) {
     location.href = 'index.html';

@@ -1,11 +1,11 @@
-/* sw.js — Service Worker для офлайн-режима
-   Кэширует все страницы, скрипты и стили.
-   Audio/* кэшируется по мере запроса (runtime cache).
+/* sw.js — Service Worker
+   Кэширует страницы, скрипты, стили, базы данных.
+   Audio/* кэшируется по факту запроса (runtime).
 */
-const CACHE_NAME = 'hanzi-app-v3';
-const RUNTIME_CACHE = 'hanzi-runtime-v3';
+const CACHE_NAME = 'hanzi-app-v4';
+const RUNTIME_CACHE = 'hanzi-runtime-v4';
 
-// Файлы, которые кэшируем СРАЗУ при установке
+// Файлы, которые кэшируем сразу при установке
 const PRECACHE_ASSETS = [
   './',
   './index.html',
@@ -18,7 +18,7 @@ const PRECACHE_ASSETS = [
   './manifest.json'
 ];
 
-// Установка — кэшируем базовые файлы
+// Установка
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -48,34 +48,26 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch — стратегия:
-//  - HTML, JS, CSS, JSON → cache-first (быстро + офлайн)
-//  - Audio/*.mp3 → runtime cache (кэшируем по факту первого запроса)
-//  - Google Fonts CDN → network-first с fallback на кэш
+// Fetch
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // Только GET
   if (req.method !== 'GET') return;
-
-  // Пропускаем chrome-extension и прочее
   if (!url.protocol.startsWith('http')) return;
 
-  // ==== AUDIO: runtime cache ====
+  // AUDIO — runtime cache
   if (url.pathname.includes('/Audio/') || url.pathname.endsWith('.mp3')) {
     event.respondWith(
       caches.open(RUNTIME_CACHE).then((cache) => {
         return cache.match(req).then((cached) => {
           if (cached) return cached;
           return fetch(req).then((response) => {
-            // Кэшируем только успешные ответы
             if (response && response.status === 200) {
               cache.put(req, response.clone());
             }
             return response;
           }).catch(() => {
-            // Офлайн и нет в кэше — возвращаем «пустой» ответ (вызовет fallback на браузерный голос)
             return new Response('', { status: 404, statusText: 'Audio offline' });
           });
         });
@@ -84,11 +76,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ==== ВСЁ ОСТАЛЬНОЕ: cache-first ====
+  // CDN (hanzi-writer, pinyin-pro, Google Fonts) — network-first
+  if (url.origin !== self.location.origin) {
+    event.respondWith(
+      fetch(req).then((response) => {
+        if (response && response.status === 200) {
+          const copy = response.clone();
+          caches.open(RUNTIME_CACHE).then((cache) => cache.put(req, copy));
+        }
+        return response;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Всё остальное (same-origin) — cache-first
   event.respondWith(
     caches.match(req).then((cached) => {
       if (cached) {
-        // Обновляем в фоне (stale-while-revalidate)
         fetch(req).then((response) => {
           if (response && response.status === 200) {
             caches.open(CACHE_NAME).then((cache) => cache.put(req, response));
@@ -97,16 +102,13 @@ self.addEventListener('fetch', (event) => {
         return cached;
       }
 
-      // Нет в кэше — идём в сеть
       return fetch(req).then((response) => {
-        // Кэшируем только same-origin успешные
         if (response && response.status === 200 && url.origin === self.location.origin) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
         }
         return response;
       }).catch(() => {
-        // Офлайн — отдаём index.html для навигационных запросов
         if (req.mode === 'navigate') {
           return caches.match('./index.html');
         }
@@ -116,7 +118,7 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Сообщение от страницы: пропустить ожидание (мгновенное обновление SW)
+// Сообщение от страницы
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
