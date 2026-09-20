@@ -7554,7 +7554,7 @@ const ex5_b13 = {
     "机动车":"机动车道。 — Полоса для автотранспорта.",
     "极端":"走极端。 — Впадать в крайности.",
     "解":"解题方法。 — Способ решения.",
-    "结":"结果。 — Итог.",
+    "结":"结果。" — Итог.",
     "饥饿":"感到饥饿。 — Почувствовать голод.",
     "杰出":"杰出人才。 — Выдающийся талант.",
     "解答":"解答问题。 — Разъяснить вопрос.",
@@ -9239,7 +9239,9 @@ const ex5_b13 = {
     ...hsk6Words_b10, ...hsk6Words_b11, ...hsk6Words_b12,
     ...hsk6Words_b13, ...hsk6Words_b14, ...hsk6Words_b15,
     ...hsk6Words_b16, ...hsk6Words_b17, ...hsk6Words_b18,
-    ...hsk6Words_b19, ...hsk6Words_b20, ...hsk6Words_b21
+    ...hsk6Words_b19, ...hsk6Words_b20, ...hsk6Words_b21,
+    ...hsk6Words_b22, ...hsk6Words_b23, ...hsk6Words_b24,
+    ...hsk6Words_b25, ...hsk6Words_b26, ...hsk6Words_b27
   ];
 
   const py6 = {
