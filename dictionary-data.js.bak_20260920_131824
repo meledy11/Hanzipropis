@@ -9138,9 +9138,11 @@ const ex5_b13 = {
     "骤":"骤然。 — Внезапно.",
     "颖":"新颖。 — Оригинальный.",
     "宅":"宅家。 — Сидеть дома.",
-    "珠":"珍珠。 — Жемчуг."
+   "珠":"珍珠。 — Жемчуг."
   };
 
+  
+  // ---------- Экспорт ----------
   // ============================================================
   // СБОРКА HSK 4 (объединение всех кусков)
   // ============================================================
@@ -9230,29 +9232,6 @@ const ex5_b13 = {
   // ============================================================
   // СБОРКА HSK 6 (объединение всех кусков)
   // ============================================================
-  // === Автогенерация массивов слов HSK 6 из ключей py6_bNN ===
-  const hsk6Words_b1  = Object.keys(py6_b1);
-  const hsk6Words_b2  = Object.keys(py6_b2);
-  const hsk6Words_b3  = Object.keys(py6_b3);
-  const hsk6Words_b4  = Object.keys(py6_b4);
-  const hsk6Words_b5  = Object.keys(py6_b5);
-  const hsk6Words_b6  = Object.keys(py6_b6);
-  const hsk6Words_b7  = Object.keys(py6_b7);
-  const hsk6Words_b8  = Object.keys(py6_b8);
-  const hsk6Words_b9  = Object.keys(py6_b9);
-  const hsk6Words_b10 = Object.keys(py6_b10);
-  const hsk6Words_b11 = Object.keys(py6_b11);
-  const hsk6Words_b12 = Object.keys(py6_b12);
-  const hsk6Words_b13 = Object.keys(py6_b13);
-  const hsk6Words_b14 = Object.keys(py6_b14);
-  const hsk6Words_b15 = Object.keys(py6_b15);
-  const hsk6Words_b16 = Object.keys(py6_b16);
-  const hsk6Words_b17 = Object.keys(py6_b17);
-  const hsk6Words_b18 = Object.keys(py6_b18);
-  const hsk6Words_b19 = Object.keys(py6_b19);
-  const hsk6Words_b20 = Object.keys(py6_b20);
-  const hsk6Words_b21 = Object.keys(py6_b21);
-
   const hsk6 = [
     ...hsk6Words_b1,  ...hsk6Words_b2,  ...hsk6Words_b3,
     ...hsk6Words_b4,  ...hsk6Words_b5,  ...hsk6Words_b6,
@@ -9302,9 +9281,6 @@ const ex5_b13 = {
     ...ex6_b16, ...ex6_b17, ...ex6_b18,
     ...ex6_b19, ...ex6_b20
   };
-
-  // === Массив иероглифов HSK 6 из ключей py6Chars ===
-  const hsk6CharsWords = Object.keys(py6Chars);
 
   // ============================================================
   // ЭКСПОРТ
