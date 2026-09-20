@@ -1,2 +1,12 @@
 ﻿
 .idea/
+
+/dist/
+
+/node_modules/
+
+my-nitron-app/
+
+*.bak_*
+
+*.apk
