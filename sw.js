@@ -1,101 +1,124 @@
-/* Service Worker: прописи + грамматика + словарь */
+/* sw.js — Service Worker для офлайн-режима
+   Кэширует все страницы, скрипты и стили.
+   Audio/* кэшируется по мере запроса (runtime cache).
+*/
+const CACHE_NAME = 'hanzi-app-v3';
+const RUNTIME_CACHE = 'hanzi-runtime-v3';
 
-const CACHE = 'hanzi-hsk13-v5';
-
-const ASSETS = [
+// Файлы, которые кэшируем СРАЗУ при установке
+const PRECACHE_ASSETS = [
   './',
   './index.html',
-  './grammar.html',
+  './trainer.html',
+  './trainer.js',
   './dictionary.html',
-  './hsk-data.js',
+  './grammar.html',
   './dictionary-data.js',
-  './manifest.json',
-  'https://cdn.jsdelivr.net/npm/hanzi-writer@3.7/dist/hanzi-writer.min.js',
-  'https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js'
+  './hsk-data.js',
+  './manifest.json'
 ];
 
-// Установка — кэшируем каждый файл отдельно, чтобы один сбой не сломал установку
-self.addEventListener('install', (e) => {
-  e.waitUntil((async () => {
-    const cache = await caches.open(CACHE);
-    await Promise.all(
-      ASSETS.map(url =>
-        cache.add(new Request(url, { cache: 'reload' }))
-          .catch(err => console.warn('[sw] не удалось закэшировать', url, err))
-      )
-    );
-    await self.skipWaiting();
-  })());
+// Установка — кэшируем базовые файлы
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('[SW] Precache:', PRECACHE_ASSETS.length, 'файлов');
+        return cache.addAll(PRECACHE_ASSETS).catch(err => {
+          console.warn('[SW] Часть файлов не закэширована:', err);
+        });
+      })
+      .then(() => self.skipWaiting())
+  );
 });
 
-// Активация — чистим старые версии
-self.addEventListener('activate', (e) => {
-  e.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
-    await self.clients.claim();
-  })());
+// Активация — чистим старые кэши
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((names) => {
+      return Promise.all(
+        names
+          .filter((name) => name !== CACHE_NAME && name !== RUNTIME_CACHE)
+          .map((name) => {
+            console.log('[SW] Удаляем старый кэш:', name);
+            return caches.delete(name);
+          })
+      );
+    }).then(() => self.clients.claim())
+  );
 });
 
-// Сообщения со страниц
-self.addEventListener('message', (e) => {
-  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
-  if (e.data && e.data.type === 'CLEAR_CACHE') {
-    caches.delete(CACHE).then(() =>
-      self.clients.matchAll().then(list => list.forEach(c => c.postMessage({ type: 'CACHE_CLEARED' })))
-    );
-  }
-});
+// Fetch — стратегия:
+//  - HTML, JS, CSS, JSON → cache-first (быстро + офлайн)
+//  - Audio/*.mp3 → runtime cache (кэшируем по факту первого запроса)
+//  - Google Fonts CDN → network-first с fallback на кэш
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  const url = new URL(req.url);
 
-// Перехват запросов
-self.addEventListener('fetch', (e) => {
-  const req = e.request;
+  // Только GET
   if (req.method !== 'GET') return;
 
-  const url = new URL(req.url);
-  const sameOrigin = url.origin === self.location.origin;
-  const isCdn = url.hostname.endsWith('jsdelivr.net');
+  // Пропускаем chrome-extension и прочее
+  if (!url.protocol.startsWith('http')) return;
 
-  // Навигация: сеть → кэш → index.html
-  if (req.mode === 'navigate') {
-    e.respondWith((async () => {
-      try {
-        const fresh = await fetch(req);
-        const clone = fresh.clone();
-        caches.open(CACHE).then(c => c.put(req, clone)).catch(() => {});
-        return fresh;
-      } catch {
-        const cached = await caches.match(req);
-        return cached || caches.match('./index.html');
-      }
-    })());
+  // ==== AUDIO: runtime cache ====
+  if (url.pathname.includes('/Audio/') || url.pathname.endsWith('.mp3')) {
+    event.respondWith(
+      caches.open(RUNTIME_CACHE).then((cache) => {
+        return cache.match(req).then((cached) => {
+          if (cached) return cached;
+          return fetch(req).then((response) => {
+            // Кэшируем только успешные ответы
+            if (response && response.status === 200) {
+              cache.put(req, response.clone());
+            }
+            return response;
+          }).catch(() => {
+            // Офлайн и нет в кэше — возвращаем «пустой» ответ (вызовет fallback на браузерный голос)
+            return new Response('', { status: 404, statusText: 'Audio offline' });
+          });
+        });
+      })
+    );
     return;
   }
 
-  if (!sameOrigin && !isCdn) return;
-
-  // Остальное: cache-first, фоном обновляем
-  e.respondWith((async () => {
-    const cached = await caches.match(req);
-    if (cached) {
-      fetch(req)
-        .then(res => {
-          if (res && res.status === 200 && res.type !== 'opaque') {
-            caches.open(CACHE).then(c => c.put(req, res.clone())).catch(() => {});
+  // ==== ВСЁ ОСТАЛЬНОЕ: cache-first ====
+  event.respondWith(
+    caches.match(req).then((cached) => {
+      if (cached) {
+        // Обновляем в фоне (stale-while-revalidate)
+        fetch(req).then((response) => {
+          if (response && response.status === 200) {
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, response));
           }
-        })
-        .catch(() => {});
-      return cached;
-    }
-    try {
-      const res = await fetch(req);
-      if (res && res.status === 200 && res.type !== 'opaque') {
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(req, clone)).catch(() => {});
+        }).catch(() => {});
+        return cached;
       }
-      return res;
-    } catch {
-      return caches.match('./index.html') || new Response('', { status: 503, statusText: 'Offline' });
-    }
-  })());
+
+      // Нет в кэше — идём в сеть
+      return fetch(req).then((response) => {
+        // Кэшируем только same-origin успешные
+        if (response && response.status === 200 && url.origin === self.location.origin) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+        }
+        return response;
+      }).catch(() => {
+        // Офлайн — отдаём index.html для навигационных запросов
+        if (req.mode === 'navigate') {
+          return caches.match('./index.html');
+        }
+        return new Response('Offline', { status: 503 });
+      });
+    })
+  );
+});
+
+// Сообщение от страницы: пропустить ожидание (мгновенное обновление SW)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
