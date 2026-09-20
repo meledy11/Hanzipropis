@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "hanzi-writer": "3.7",
+    "hanzi-writer-data": "^2.0.1",
+    "pinyin-pro": "^3.26.0"
+  }
+}

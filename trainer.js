@@ -1,5 +1,6 @@
 /* trainer.js — Тренажёр каллиграфии + Карточки + Избранное
    Зависимости: dictionary-data.js (window.HSK_DICT), pinyinPro, HanziWriter
+   Данные черт: локально из hanzi-writer-data/<иероглиф>.json
 */
 (function () {
   'use strict';
@@ -8,6 +9,29 @@
   const FAV_KEY = 'hanzi_trainer_favorites_v1';
   const REVIEW_INTERVALS = [0, 1, 2, 4, 7, 15, 30, 60, 120];
   const AUTOPLAY_PLAYLIST_SIZE = 50;
+
+  // ============================================================
+  // ЛОКАЛЬНЫЕ ДАННЫЕ ЧЕРТ
+  // ============================================================
+  const hanziDataCache = new Map();
+
+  function hanziDataPath(char) {
+    return 'hanzi-writer-data/' + encodeURIComponent(char) + '.json';
+  }
+
+  async function loadHanziData(char) {
+    if (hanziDataCache.has(char)) return hanziDataCache.get(char);
+    const res = await fetch(hanziDataPath(char));
+    if (!res.ok) throw new Error('Нет данных для ' + char);
+    const data = await res.json();
+    hanziDataCache.set(char, data);
+    return data;
+  }
+
+  // Общий charDataLoader — передаётся во все HanziWriter.create
+  const CHAR_DATA_LOADER = (ch, onComplete, onError) => {
+    loadHanziData(ch).then(onComplete).catch(onError);
+  };
 
   // ============================================================
   // ОЗВУЧКА
@@ -191,7 +215,6 @@
   function getCharMeaning(char) {
     const direct = findWordInfo(char);
     if (direct && direct.meaning) return direct.meaning;
-    // Проверяем список иероглифов HSK 6
     const d6c = getDict()['hsk6_chars'];
     if (d6c && d6c.ru && d6c.ru[char]) return d6c.ru[char];
     for (const lvl of getLevels()) {
@@ -387,7 +410,6 @@
   let autoplayCancelToken = 0;
   let autoplayDelayTimer = null;
 
-  // Карточки
   let cardsLevel = '1';
   let cardsQuery = '';
 
@@ -599,12 +621,16 @@
       drawingWidth: Math.max(15, size * 0.06),
       showCharacter: false,
       highlightColor: '#d92d20', outlineColor: '#d9e0ea', drawingColor: '#1a1f2b',
-      showHintAfterMisses: 1, highlightOnComplete: true
+      showHintAfterMisses: 1, highlightOnComplete: true,
+      charDataLoader: CHAR_DATA_LOADER
     });
 
-    hwWriter.getCharacterData().then(function (charData) {
-      currentStrokesTotal = charData.strokes.length;
+    // Определяем количество черт через локальный кэш (надёжнее, чем getCharacterData)
+    loadHanziData(data.char).then(function (charData) {
+      currentStrokesTotal = (charData.strokes || []).length;
       updateProgress(0);
+    }).catch(function () {
+      currentStrokesTotal = 0;
     });
 
     hwWriter.quiz({
@@ -788,7 +814,8 @@
           showOutline: true, strokeAnimationSpeed: 0.7, delayBetweenStrokes: 500,
           drawingWidth: Math.max(15, size * 0.06),
           showCharacter: false,
-          highlightColor: '#d92d20', outlineColor: '#d9e0ea', drawingColor: '#1a1f2b'
+          highlightColor: '#d92d20', outlineColor: '#d9e0ea', drawingColor: '#1a1f2b',
+          charDataLoader: CHAR_DATA_LOADER
         });
       } catch (e) { console.warn('Autoplay writer', e); return; }
       if (dom.instruction) { dom.instruction.textContent = '▶️ Автоплей (' + (plIndex + 1) + '/' + playlist.length + ')'; dom.instruction.style.color = '#2563eb'; }
