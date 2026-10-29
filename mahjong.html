@@ -111,7 +111,7 @@ button:active{transform:translateY(2px);box-shadow:0 0 0 #9b5e1c}
 <div class="game-container">
   <div class="nav-buttons">
     <a href="index.html" class="back-btn">◀ Главная</a>
-    <a href="copybook.html" class="back-btn">✍️ Тетрадь</a>
+    <a href="index.html" class="back-btn">✍️ Тетрадь</a>
   </div>
   <h1>🀄️ МАДЖОНГ · КЛЮЧ → СЛОВО</h1>
   <div class="sub">Соедини ключ (🔑 радикал) со словом (📖), в котором он есть</div>
@@ -193,10 +193,6 @@ function addToCopybookOnly(char,pinyin,meaning){
   localStorage.setItem('copybook_words',JSON.stringify(arr));
   return true;
 }
-function openCopybookWithWord(char,pinyin,meaning){
-  localStorage.setItem('selected_character',JSON.stringify({char,pinyin,meaning}));
-  window.location.href='copybook.html';
-}
 function showToast(m){
   const t=document.createElement('div');
   t.className='toast';t.textContent=m;
@@ -220,11 +216,11 @@ function getAllPairsForLevel(level){
   const seen=new Set();
   for(const w of group.words){
     if(!w) continue;
-    if(w.length !== 1) continue;         // только одиночные иероглифы
+    if(w.length !== 1) continue;
     if(seen.has(w)) continue;
     const keyChar = CHAR_RADICAL[w];
-    if(!keyChar) continue;               // нет ключа — пропускаем
-    if(keyChar === w) continue;          // ключ не должен совпадать со словом
+    if(!keyChar) continue;
+    if(keyChar === w) continue;
     seen.add(w);
     const ki = getKeyInfo(keyChar);
     out.push({
@@ -253,7 +249,7 @@ function getAllPairsForGame(){
   return out;
 }
 
-/* ===== ПРИМЕРЫ (слова с тем же ключом) ===== */
+/* ===== ПРИМЕРЫ ===== */
 function collectExamples(word, limit){
   const key = word.keyChar;
   const self = word.char;
@@ -561,7 +557,10 @@ function initGame(){
     return;
   }
 
-  totalPairs=pairs.length;
+  // totalPairs = число уникальных СЛОВ, которые нужно собрать.
+  // Ключей на доске может быть меньше (если у нескольких слов один ключ),
+  // но совпадение определяется по символу ключа, а не по pairId.
+  totalPairs = pairs.length;
   matchedCount=0;score=0;streak=0;selectedId=null;pendingWord=null;
   tiles=[];
 
@@ -586,7 +585,7 @@ function initGame(){
   renderGrid();
   startTimer();
   msgEl.textContent=`🎮 Найди ${totalPairs} пар: ключ ↔ слово`;
-  dbStatus.textContent=`🎮 В игре: ${totalPairs} пар`;
+  dbStatus.textContent=`🎮 В игре: ${totalPairs} слов`;
 }
 
 /* ===== РЕНДЕР ===== */
@@ -643,10 +642,19 @@ function onTileClick(clicked,event){
     return;
   }
 
-  if(sel.pairId===clicked.pairId){
-    const wordTile=sel.type==='word'?sel:clicked;
-    sel.removed=true;clicked.removed=true;
-    matchedCount++;streak++;
+  const wordTile = sel.type==='word' ? sel : clicked;
+  const keyTile  = sel.type==='key'  ? sel : clicked;
+
+  // Вариант C: совпадение по символу ключа, а не по pairId.
+  // Любой визуально одинаковый ключ (например, любой 口) подходит к слову,
+  // у которого в базе ключ = 口.
+  const isMatch = (wordTile.keyChar === keyTile.char);
+
+  if(isMatch){
+    wordTile.removed = true;
+    keyTile.removed  = true;
+    matchedCount++;
+    streak++;
 
     let points=10+Math.floor(streak/2)*2;
     const sp=calcSpeedBonus();
@@ -671,7 +679,9 @@ function onTileClick(clicked,event){
 
     msgEl.textContent=`✅ +${points}${sp.bonus>0?' ⚡':''} (🔥${streak})`;
 
-    if(matchedCount===totalPairs){
+    // Проверка победы: все слова собраны (считаем именно слова, не пары плиток)
+    const wordsLeft = tiles.filter(t=>!t.removed && t.type==='word').length;
+    if(wordsLeft === 0){
       stopTimer();
       msgEl.textContent='🏆 УРОВЕНЬ ПРОЙДЕН!';
       speakChinese('恭喜你');
@@ -679,7 +689,7 @@ function onTileClick(clicked,event){
   }else{
     streak=0;
     updateUI();
-    msgEl.textContent=`❌ ${sel.char} ≠ ${clicked.char}. Попробуй ещё!`;
+    msgEl.textContent=`❌ ${wordTile.char} ≠ ключ ${keyTile.char}. Попробуй ещё!`;
     selectedId=null;
     renderGrid();
   }
@@ -688,10 +698,13 @@ function onTileClick(clicked,event){
 /* ===== UI ===== */
 function updateUI(){
   if(scoreSpan)scoreSpan.textContent=score;
-  if(remainSpan)remainSpan.textContent=totalPairs-matchedCount;
+  // Осталось слов = сколько слов ещё не собрано
+  const wordsLeft = tiles.filter(t=>!t.removed && t.type==='word').length;
+  if(remainSpan)remainSpan.textContent=wordsLeft;
   if(streakSpan)streakSpan.textContent=streak;
   if(recordSpan)recordSpan.textContent=record;
-  if(progressFill&&totalPairs>0)progressFill.style.width=((matchedCount/totalPairs)*100)+'%';
+  const total = totalPairs || 1;
+  if(progressFill)progressFill.style.width=((matchedCount/total)*100)+'%';
 }
 
 /* ===== ДЕЙСТВИЯ ===== */
@@ -707,15 +720,18 @@ function shuffleTiles(){
 }
 function showHint(){
   const active=tiles.filter(t=>!t.removed);
-  for(let i=0;i<active.length;i++){
-    for(let j=i+1;j<active.length;j++){
-      if(active[i].pairId===active[j].pairId&&active[i].type!==active[j].type){
-        msgEl.textContent=`💡 "${active[i].char}" ↔ "${active[j].char}"`;
+  // Ищем слово и ключ, у которых wordTile.keyChar === keyTile.char
+  const words = active.filter(t=>t.type==='word');
+  const keys  = active.filter(t=>t.type==='key');
+  for(const w of words){
+    for(const k of keys){
+      if(w.keyChar === k.char){
+        msgEl.textContent=`💡 "${k.char}" (ключ) ↔ "${w.char}" (слово)`;
         const nodes=gridEl.querySelectorAll('.tile');
         let idx=0;
         for(const t of tiles){
           if(t.removed)continue;
-          if(t.id===active[i].id||t.id===active[j].id){
+          if(t.id===w.id||t.id===k.id){
             if(nodes[idx]){
               nodes[idx].style.borderColor='#f7b42c';
               nodes[idx].style.boxShadow='0 0 0 4px rgba(247,180,44,.5),0 5px 0 #8b6946';
