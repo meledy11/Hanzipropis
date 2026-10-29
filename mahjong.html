@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>🀄️ МАДЖОНГ | КЛЮЧ → СЛОВО (HSK 1-6)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
+
+<!-- Порядок важен: сначала dictionary, потом radicals-info, потом три части CHAR_RADICAL -->
+<script src="dictionary-data.js"></script>
+<script src="radicals-info.js"></script>
+<script src="char-radical-hsk12.js"></script>
+<script src="char-radical-hsk34.js"></script>
+<script src="char-radical-hsk56.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}
+body{background:linear-gradient(145deg,#1a3a2a,#0a1a0f);min-height:100vh;font-family:system-ui,'PingFang SC','Noto Sans CJK SC',sans-serif;padding:8px}
+.game-container{max-width:1200px;margin:0 auto;background:rgba(30,25,20,.65);border-radius:28px;padding:10px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+
+h1{text-align:center;font-size:clamp(.9rem,3vw,1.2rem);color:#f7e05e;margin-bottom:4px;line-height:1.2}
+.sub{text-align:center;color:#d4c9a6;font-size:.65rem;margin-bottom:6px}
+.level-bar-wrapper{overflow-x:auto;white-space:nowrap;margin-bottom:6px;padding-bottom:2px;scrollbar-width:none}
+.level-bar-wrapper::-webkit-scrollbar{display:none}
+.level-bar{display:inline-flex;gap:4px;padding:0 2px}
+.level-btn{background:#4a3729;color:#d4c9a6;padding:3px 10px;border-radius:40px;cursor:pointer;font-weight:bold;font-size:.65rem;white-space:nowrap;transition:.15s;border:none;font-family:inherit}
+.level-btn.active{background:linear-gradient(135deg,#f7b42c,#fc8e2c);color:#2c1a0c;box-shadow:0 2px 0 #b36b0f}
+.stats-bar{display:flex;justify-content:center;gap:6px;background:#2c2118;padding:5px 8px;border-radius:60px;margin-bottom:6px;color:#ffecb3;font-weight:bold;font-size:.7rem;flex-wrap:wrap}
+.stats-bar span{background:#00000044;padding:2px 8px;border-radius:40px}
+.progress-bar{background:#4a3729;border-radius:30px;height:4px;margin-bottom:6px;overflow:hidden}
+.progress-fill{background:linear-gradient(90deg,#f7b42c,#f5a623);width:0%;height:100%;transition:width .4s cubic-bezier(.4,0,.2,1)}
+.message-area{background:#261d14e6;border-radius:60px;padding:6px 12px;text-align:center;font-weight:bold;font-size:.75rem;margin-bottom:6px;color:#f7e6c4;min-height:32px;display:flex;align-items:center;justify-content:center}
+.ctrl-buttons{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+button{background:linear-gradient(135deg,#f7b42c,#fc8e2c);border:none;padding:6px 14px;font-size:.7rem;font-weight:bold;border-radius:50px;color:#2c1a0c;cursor:pointer;box-shadow:0 2px 0 #9b5e1c;transition:.08s;font-family:inherit}
+button:active{transform:translateY(2px);box-shadow:0 0 0 #9b5e1c}
+.reset-btn{background:linear-gradient(135deg,#4b6a3b,#2d5a2a);color:#f9e7b3}
+.hint-btn{background:linear-gradient(135deg,#3a6b8a,#2a4a6a);color:#fff}
+.shuffle-btn{background:linear-gradient(135deg,#8e44ad,#6c3483);color:#fff}
+.nav-buttons{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.back-btn{background:linear-gradient(135deg,#5a4a3a,#3a2a1a);color:#f7e05e;padding:5px 12px;font-size:.7rem;text-decoration:none;display:inline-flex;align-items:center;gap:4px;border-radius:40px}
+
+.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;background:#3c2a1f;padding:14px;border-radius:24px;margin-bottom:8px;min-height:250px;max-height:78vh;overflow-y:auto}
+.game-grid::-webkit-scrollbar{width:6px}
+.game-grid::-webkit-scrollbar-thumb{background:#8b6946;border-radius:3px}
+.tile{background:#fff8e7;background-image:radial-gradient(circle at 25% 35%,rgba(255,245,200,.6) 2%,transparent 2.5%);background-size:22px 22px;border-radius:18px;text-align:center;cursor:pointer;transition:all .12s;border:3px solid #c8aa6e;box-shadow:0 5px 0 #8b6946;padding:12px 8px 10px;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:130px;gap:2px;position:relative}
+.tile:active{transform:scale(.97)}
+.tile.selected{background:#ffe6b3;border-color:#f5b042;box-shadow:0 2px 0 #8b6946,0 0 0 4px rgba(245,176,66,.4);transform:scale(.98)}
+.tile.removed{display:none}
+.tile .main-char{font-size:clamp(40px,9vw,56px);font-weight:800;color:#3c2a1f;line-height:1.1;font-family:'Ma Shan Zheng','Noto Sans SC',serif}
+.tile .pinyin{font-size:clamp(11px,2.5vw,14px);color:#b34e1a;font-weight:600;line-height:1.2}
+.tile .info{font-size:clamp(9px,2vw,12px);color:#5a4a3a;background:#f3e5c9;display:inline-block;padding:2px 10px;border-radius:20px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+.tile-badge{position:absolute;top:4px;right:6px;font-size:.62rem;background:rgba(0,0,0,.45);color:#fff;padding:1px 8px;border-radius:20px}
+.sound-badge{position:absolute;bottom:4px;right:6px;font-size:.7rem;background:rgba(0,0,0,.45);border-radius:20px;padding:2px 8px;color:#fff;cursor:pointer;z-index:2}
+
+.learn-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.92);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:2000;padding:6px}
+.learn-card{background:linear-gradient(145deg,#fffaf0,#f8f0e0);border-radius:24px;padding:10px 12px;max-width:440px;width:100%;text-align:center;border:2px solid #f7b42c;max-height:98vh;display:flex;flex-direction:column;gap:6px;box-shadow:0 20px 50px rgba(0,0,0,.6);overflow-y:auto}
+.radical-header{display:flex;align-items:center;gap:10px;justify-content:center}
+.radical-big{font-family:'Ma Shan Zheng',cursive;font-size:clamp(44px,10vw,56px);font-weight:400;color:#c0392b;background:linear-gradient(135deg,#fff0d0,#ffe8c0);display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:14px;cursor:pointer;border:2px dashed #f7b42c;flex-shrink:0;line-height:1}
+.radical-info{text-align:left;min-width:0}
+.radical-name{font-size:15px;font-weight:bold;color:#2c1a0c;line-height:1.2}
+.radical-pinyin{font-size:13px;color:#8e44ad;font-weight:500}
+.radical-mean{font-size:10px;color:#6b5a4a}
+.writer-section{background:linear-gradient(135deg,#fdf6ee,#f5ead8);border-radius:14px;padding:8px;border:2px solid #d4b896;display:flex;align-items:center;gap:8px}
+.hw-box{width:120px;height:120px;background:#fffef9;border-radius:10px;border:2px solid #c8aa6e;box-shadow:inset 0 2px 6px rgba(0,0,0,.08);flex-shrink:0;position:relative;overflow:hidden}
+.hw-box svg{width:100%!important;height:100%!important;display:block}
+.writer-controls{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+.writer-controls button{font-size:.65rem;padding:5px 8px;width:100%}
+.stroke-label{font-size:.7rem;color:#6b5a4a;font-weight:600;text-align:center}
+.draw-section{background:linear-gradient(135deg,#f5e6d3,#e8d5c0);border-radius:14px;padding:8px;border:2px solid #d4b896;display:flex;flex-direction:column;align-items:center;gap:4px}
+.draw-canvas-container{position:relative;background:#fffef9;border-radius:14px;padding:4px;border:2px solid #c8aa6e;display:inline-block;box-shadow:inset 0 2px 8px rgba(0,0,0,.08)}
+.draw-canvas{display:block;margin:0 auto;cursor:crosshair;background:transparent;touch-action:none}
+.brush-controls{display:flex;align-items:center;gap:6px;width:100%}
+.brush-slider-wrapper{display:flex;align-items:center;gap:6px;background:#2c2118;padding:4px 10px;border-radius:40px;flex:1}
+.brush-slider-wrapper label{font-size:.7rem;color:#f7e05e;font-weight:bold;white-space:nowrap}
+.brush-slider-wrapper input[type="range"]{flex:1;accent-color:#f7b42c;cursor:pointer;height:16px}
+.brush-preview{width:20px;height:20px;border-radius:50%;background:#1a0f0a;transition:all .15s;flex-shrink:0}
+.draw-tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.draw-tools button{padding:5px 12px;font-size:.7rem}
+.draw-tools .clear-draw{background:linear-gradient(135deg,#c0392b,#e74c3c)}
+.quality-bar{background:#2c2118;height:6px;border-radius:6px;width:100%;max-width:260px;overflow:hidden}
+.quality-fill{height:100%;background:linear-gradient(90deg,#e74c3c,#f39c12,#2ecc71);width:0%;transition:width .5s ease;border-radius:6px}
+.quality-text{font-size:.7rem;color:#6b5a4a;font-weight:500}
+.examples-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0;width:100%}
+.examples-row::-webkit-scrollbar{display:none}
+.example-word{background:linear-gradient(135deg,#3c2a1f,#2a1a0f);border-radius:12px;padding:6px 10px;text-align:center;cursor:pointer;transition:.1s;min-width:70px;flex-shrink:0;border:1px solid #5a4a3a}
+.example-word:active{transform:scale(.97)}
+.example-word .ex-char{font-size:22px;font-weight:bold;color:#f7e05e;line-height:1}
+.example-word .ex-pinyin{font-size:9px;color:#ffd966;margin-top:1px}
+.example-word .ex-mean{font-size:8px;color:#d4c9a6}
+.notebook-actions{display:flex;gap:8px;justify-content:center}
+.close-learn{background:linear-gradient(135deg,#f7b42c,#fc8e2c);border:none;padding:8px 22px;font-size:.8rem;font-weight:bold;border-radius:50px;cursor:pointer}
+.notebook-btn{background:linear-gradient(135deg,#2ecc71,#27ae60);border:none;padding:8px 18px;font-size:.75rem;font-weight:bold;border-radius:50px;cursor:pointer;color:#fff}
+.speed-bonus{position:fixed;pointer-events:none;z-index:3000;font-size:1.4rem;font-weight:900;color:#f7b42c;text-shadow:0 2px 8px rgba(0,0,0,.5);animation:floatUpBonus 1.2s ease-out forwards}
+@keyframes floatUpBonus{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-60px) scale(1.3)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+.pulse{animation:pulse 2s infinite ease-in-out}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2ecc71;color:#fff;padding:10px 20px;border-radius:50px;z-index:3000;font-size:15px;box-shadow:0 5px 20px rgba(0,0,0,.3)}
+.db-status{background:#2c2118;border-radius:20px;padding:3px 10px;font-size:.65rem;text-align:center;margin-bottom:6px;color:#f7e05e}
+@media(max-width:768px){
+  .game-grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:10px;padding:10px}
+  .tile{min-height:110px;padding:10px 6px 8px}
+  .tile .main-char{font-size:clamp(34px,8vw,46px)}
+  .learn-card{padding:8px 10px}
+}
+</style>
+</head>
+<body>
+<div class="game-container">
+  <div class="nav-buttons">
+    <a href="index.html" class="back-btn">◀ Главная</a>
+    <a href="copybook.html" class="back-btn">✍️ Тетрадь</a>
+  </div>
+  <h1>🀄️ МАДЖОНГ · КЛЮЧ → СЛОВО</h1>
+  <div class="sub">Соедини ключ (🔑 радикал) со словом (📖), в котором он есть</div>
+  <div class="db-status" id="dbStatus">📡 Загрузка базы...</div>
+
+  <div class="level-bar-wrapper">
+    <div class="level-bar" id="levelBar">
+      <button class="level-btn" data-level="hsk1">🅰️ HSK1</button>
+      <button class="level-btn" data-level="hsk2">🅰️ HSK2</button>
+      <button class="level-btn" data-level="hsk3">🅰️ HSK3</button>
+      <button class="level-btn" data-level="hsk4">🅰️ HSK4</button>
+      <button class="level-btn" data-level="hsk5">🅰️ HSK5</button>
+      <button class="level-btn active" data-level="hsk6">🅰️ HSK6</button>
+      <button class="level-btn" data-level="hsk6_chars">🈶 HSK6-чары</button>
+      <button class="level-btn" data-level="all">🏆 ВСЕ</button>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <span>🎯 <span id="scoreValue">0</span></span>
+    <span>🧩 <span id="remainValue">0</span></span>
+    <span>🔥 <span id="streakValue">0</span></span>
+    <span>⏱️ <span id="timerValue">0:00</span></span>
+    <span>🏆 <span id="recordValue">0</span></span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="message-area" id="gameMessage">🌟 Нажми на ключ, затем на слово</div>
+
+  <div class="game-grid" id="gameGrid"></div>
+
+  <div class="ctrl-buttons">
+    <button id="hintBtn" class="hint-btn">💡 Подсказка</button>
+    <button id="shuffleBtn" class="shuffle-btn">🔄 Перемешать</button>
+    <button id="resetGameBtn" class="reset-btn">🆕 Новая игра</button>
+  </div>
+</div>
+
+<script>
+/* ===== КОНФИГ ===== */
+const NOTEBOOK_CONFIG={canvasSize:420,gridPadding:28,defaultBrushWidth:14,minBrushWidth:4,maxBrushWidth:30,exampleOpacity:0.45,gridColor:'#b8956a',gridColorCenter:'#d4b896',strokeColor:'#1a0f0a',exampleColor:'#9b59b6',checkThreshold:0.40,checkGoodThreshold:0.25};
+
+/* ===== СКЛЕЙКА CHAR_RADICAL ===== */
+const CHAR_RADICAL = Object.assign(
+  {},
+  window.CHAR_RADICAL_HSK12 || {},
+  window.CHAR_RADICAL_HSK34 || {},
+  window.CHAR_RADICAL_HSK56 || {}
+);
+const RADICAL_INFO = window.RADICAL_INFO || {};
+
+function getKeyInfo(c){
+  const info = RADICAL_INFO[c] || {};
+  return { pinyin: info.pinyin || '', meaning: info.meaning || 'ключ' };
+}
+
+/* ===== ОЗВУЧКА ===== */
+let chineseVoice=null;
+function loadChineseVoice(){if(!window.speechSynthesis)return;const v=speechSynthesis.getVoices();chineseVoice=v.find(x=>x.lang.startsWith('zh'))||null}
+if(window.speechSynthesis){speechSynthesis.onvoiceschanged=loadChineseVoice;setTimeout(loadChineseVoice,100)}
+function speakChinese(text){
+  if(!window.speechSynthesis||!text)return;
+  if(['丶','丨','丿','乛','⺄','⺀','⺁','⺂'].includes(text))return;
+  speechSynthesis.cancel();
+  setTimeout(()=>{
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='zh-CN';u.rate=0.8;
+    if(chineseVoice)u.voice=chineseVoice;
+    speechSynthesis.speak(u);
+  },40);
+}
+
+/* ===== ТЕТРАДЬ ===== */
+function addToCopybookOnly(char,pinyin,meaning){
+  if(!char)return false;
+  let arr=[];
+  try{arr=JSON.parse(localStorage.getItem('copybook_words')||'[]');if(!Array.isArray(arr))arr=[]}catch(e){arr=[]}
+  if(arr.some(w=>w.char===char))return false;
+  arr.unshift({char,pinyin,meaning,timestamp:Date.now()});
+  localStorage.setItem('copybook_words',JSON.stringify(arr));
+  return true;
+}
+function openCopybookWithWord(char,pinyin,meaning){
+  localStorage.setItem('selected_character',JSON.stringify({char,pinyin,meaning}));
+  window.location.href='copybook.html';
+}
+function showToast(m){
+  const t=document.createElement('div');
+  t.className='toast';t.textContent=m;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2000);
+}
+
+/* ===== ПАРЫ ИЗ HSK_DICT ===== */
+function shuffleArr(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function getHskGroup(level){
+  if(!window.HSK_DICT) return null;
+  if(level==='hsk6_chars') return window.HSK_DICT.hsk6_chars || null;
+  return window.HSK_DICT[level] || null;
+}
+
+function getAllPairsForLevel(level){
+  const group = getHskGroup(level);
+  if(!group || !Array.isArray(group.words)) return [];
+  const out=[];
+  const seen=new Set();
+  for(const w of group.words){
+    if(!w) continue;
+    if(w.length !== 1) continue;         // только одиночные иероглифы
+    if(seen.has(w)) continue;
+    const keyChar = CHAR_RADICAL[w];
+    if(!keyChar) continue;               // нет ключа — пропускаем
+    if(keyChar === w) continue;          // ключ не должен совпадать со словом
+    seen.add(w);
+    const ki = getKeyInfo(keyChar);
+    out.push({
+      wordChar: w,
+      wordPinyin: (group.pinyin && group.pinyin[w]) || '',
+      wordMeaning: (group.ru && group.ru[w]) || '',
+      keyChar,
+      keyPinyin: ki.pinyin,
+      keyMeaning: ki.meaning
+    });
+  }
+  return out;
+}
+
+function getAllPairsForGame(){
+  const LEVELS = ['hsk1','hsk2','hsk3','hsk4','hsk5','hsk6','hsk6_chars'];
+  const seenWords = new Set();
+  const out = [];
+  for(const lv of LEVELS){
+    for(const p of getAllPairsForLevel(lv)){
+      if(seenWords.has(p.wordChar)) continue;
+      seenWords.add(p.wordChar);
+      out.push(p);
+    }
+  }
+  return out;
+}
+
+/* ===== ПРИМЕРЫ (слова с тем же ключом) ===== */
+function collectExamples(word, limit){
+  const key = word.keyChar;
+  const self = word.char;
+  const out = [];
+  const seen = new Set([self]);
+  if(!window.HSK_DICT) return out;
+
+  const ALL = ['hsk1','hsk2','hsk3','hsk4','hsk5','hsk6','hsk6_chars'];
+  for(const lv of ALL){
+    if(out.length >= limit) break;
+    const g = getHskGroup(lv);
+    if(!g || !Array.isArray(g.words)) continue;
+    for(const ch of g.words){
+      if(out.length >= limit) break;
+      if(!ch || ch.length !== 1) continue;
+      if(seen.has(ch)) continue;
+      if(!ch.includes(key)) continue;
+      if(ch === key) continue;
+      if(CHAR_RADICAL[ch] !== key) continue;
+      seen.add(ch);
+      out.push({
+        char: ch,
+        pinyin: (g.pinyin && g.pinyin[ch]) || '',
+        meaning: (g.ru && g.ru[ch]) || ''
+      });
+    }
+  }
+  return out;
+}
+
+/* ===== СОСТОЯНИЕ ===== */
+let currentLevel='hsk6';
+let tiles=[],selectedId=null;
+let matchedCount=0,totalPairs=0,score=0,streak=0,record=0;
+let gameStartTime=0,timerInterval=null,lastMatchTime=0;
+let currentModal=null,hwWriterInstance=null;
+let currentBrushWidth=NOTEBOOK_CONFIG.defaultBrushWidth;
+let pendingWord=null;
+
+const gridEl=document.getElementById('gameGrid');
+const scoreSpan=document.getElementById('scoreValue');
+const remainSpan=document.getElementById('remainValue');
+const streakSpan=document.getElementById('streakValue');
+const recordSpan=document.getElementById('recordValue');
+const timerSpan=document.getElementById('timerValue');
+const progressFill=document.getElementById('progressFill');
+const msgEl=document.getElementById('gameMessage');
+const dbStatus=document.getElementById('dbStatus');
+
+/* ===== ТАЙМЕР / БОНУСЫ ===== */
+function startTimer(){
+  gameStartTime=Date.now();lastMatchTime=Date.now();
+  if(timerInterval)clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    const e=Math.floor((Date.now()-gameStartTime)/1000);
+    const m=Math.floor(e/60),s=e%60;
+    if(timerSpan)timerSpan.textContent=`${m}:${s.toString().padStart(2,'0')}`;
+  },1000);
+}
+function stopTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null}}
+function calcSpeedBonus(){
+  const now=Date.now(),diff=(now-lastMatchTime)/1000;
+  lastMatchTime=now;
+  let bonus=0,label='';
+  if(diff<2){bonus=15;label='⚡+15'}
+  else if(diff<4){bonus=10;label='🔥+10'}
+  else if(diff<7){bonus=5;label='👍+5'}
+  return{bonus,label};
+}
+function showFloatingBonus(text,x,y){
+  if(!text)return;
+  const el=document.createElement('div');
+  el.className='speed-bonus';el.textContent=text;
+  el.style.left=x+'px';el.style.top=y+'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1300);
+}
+
+/* ===== CANVAS ===== */
+function drawMiziGeGrid(ctx,size,padding){
+  const inner=size-padding*2,center=size/2;
+  ctx.lineWidth=2.5;ctx.strokeStyle=NOTEBOOK_CONFIG.gridColor;ctx.strokeRect(padding,padding,inner,inner);
+  ctx.setLineDash([8,5]);ctx.lineWidth=1.3;ctx.strokeStyle=NOTEBOOK_CONFIG.gridColorCenter;
+  ctx.beginPath();ctx.moveTo(center,padding);ctx.lineTo(center,size-padding);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(padding,center);ctx.lineTo(size-padding,center);ctx.stroke();
+  ctx.setLineDash([4,4]);ctx.lineWidth=0.9;ctx.strokeStyle=NOTEBOOK_CONFIG.gridColor;
+  ctx.beginPath();ctx.moveTo(padding,padding);ctx.lineTo(size-padding,size-padding);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(size-padding,padding);ctx.lineTo(padding,size-padding);ctx.stroke();
+  ctx.setLineDash([]);
+}
+function initNotebookCanvas(canvas){
+  const s=NOTEBOOK_CONFIG.canvasSize;canvas.width=canvas.height=s;
+  canvas.style.cssText=`width:100%;max-width:${s}px;aspect-ratio:1/1;display:block;touch-action:none`;
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  ctx.fillStyle='#fffef9';ctx.fillRect(0,0,s,s);drawMiziGeGrid(ctx,s,NOTEBOOK_CONFIG.gridPadding);
+  return ctx;
+}
+function showExampleOnCanvas(canvas,char){
+  const ctx=canvas.getContext('2d'),s=NOTEBOOK_CONFIG.canvasSize,inner=s-NOTEBOOK_CONFIG.gridPadding*2;
+  const draw=()=>{
+    ctx.fillStyle='#fffef9';ctx.fillRect(0,0,s,s);drawMiziGeGrid(ctx,s,NOTEBOOK_CONFIG.gridPadding);
+    ctx.save();ctx.globalAlpha=NOTEBOOK_CONFIG.exampleOpacity;ctx.fillStyle=NOTEBOOK_CONFIG.exampleColor;
+    ctx.font=`400 ${Math.floor(inner*0.95)}px "Ma Shan Zheng","STKaiti",serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(char,s/2,s/2+(inner*0.03));ctx.restore();
+    ctx.lineWidth=currentBrushWidth;ctx.lineCap='round';ctx.lineJoin='round';ctx.globalAlpha=1;
+    canvas._refData=ctx.getImageData(0,0,s,s);
+  };
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(()=>{document.fonts.load(`400 48px "Ma Shan Zheng"`).then(draw).catch(draw)})}else{setTimeout(draw,500)}
+}
+function clearNotebookCanvas(canvas){
+  const ctx=canvas.getContext('2d'),s=NOTEBOOK_CONFIG.canvasSize;
+  ctx.fillStyle='#fffef9';ctx.fillRect(0,0,s,s);drawMiziGeGrid(ctx,s,NOTEBOOK_CONFIG.gridPadding);
+  delete canvas._refData;canvas._drawn=false;
+}
+function checkQuality(canvas){
+  if(!canvas._refData)return{score:0,msg:'Сначала покажи образец',color:'#95a5a6'};
+  const ctx=canvas.getContext('2d'),s=NOTEBOOK_CONFIG.canvasSize,current=ctx.getImageData(0,0,s,s);
+  const dRef=canvas._refData.data,dCur=current.data;
+  let match=0,totalRef=0,userOutside=0;const th=235;
+  for(let i=0;i<dRef.length;i+=4){
+    const isRef=(dRef[i]<th||dRef[i+1]<th||dRef[i+2]<th);
+    const isUser=(dCur[i]<th||dCur[i+1]<th||dCur[i+2]<th);
+    if(isRef){totalRef++;if(isUser)match++}else if(isUser){userOutside++}
+  }
+  if(totalRef===0)return{score:0,msg:'Нет эталона',color:'#95a5a6'};
+  const precision=match/totalRef,recall=totalRef>0?match/(totalRef+userOutside):0;
+  const f1=2*(precision*recall)/(precision+recall+0.001),pct=Math.round(f1*100);
+  if(f1>NOTEBOOK_CONFIG.checkThreshold)return{score:pct,msg:'🌟 Отлично!',color:'#2ecc71'};
+  if(f1>NOTEBOOK_CONFIG.checkGoodThreshold)return{score:pct,msg:'👍 Хорошо!',color:'#f39c12'};
+  return{score:pct,msg:'📝 Тренируйся ещё',color:'#e67e22'};
+}
+function setupCalligraphyBrush(canvas){
+  const ctx=canvas.getContext('2d');
+  let drawing=false,lastX,lastY,lastWidth,lastTime,strokeLen=0;
+  function getPos(e){
+    const rect=canvas.getBoundingClientRect();
+    return{
+      x:(e.clientX-rect.left)*canvas.width/rect.width,
+      y:(e.clientY-rect.top)*canvas.height/rect.height,
+      pressure:Math.max(0.1,e.pressure||0.5)
+    };
+  }
+  function start(e){
+    e.preventDefault();drawing=true;canvas._drawn=true;strokeLen=0;
+    const p=getPos(e);lastX=p.x;lastY=p.y;lastTime=performance.now();
+    lastWidth=currentBrushWidth*0.8;
+    ctx.fillStyle=NOTEBOOK_CONFIG.strokeColor;ctx.shadowBlur=1.5;ctx.shadowColor=NOTEBOOK_CONFIG.strokeColor;
+    ctx.beginPath();ctx.arc(p.x,p.y,lastWidth/2,0,Math.PI*2);ctx.fill();
+  }
+  function draw(e){
+    if(!drawing)return;e.preventDefault();
+    const p=getPos(e),now=performance.now(),dt=Math.max(1,now-lastTime);
+    const dx=p.x-lastX,dy=p.y-lastY,dist=Math.hypot(dx,dy),speed=dist/dt;
+    strokeLen+=dist;
+    const base=currentBrushWidth,pF=0.3+p.pressure*0.7,sF=Math.max(0.15,1-(speed/1.2));
+    let targetW=base*pF*sF;
+    if(strokeLen<22)targetW*=(0.65+0.35*(strokeLen/22));
+    targetW=Math.max(2.5,Math.min(base*1.8,targetW));
+    const newW=lastWidth*0.7+targetW*0.3;
+    ctx.save();ctx.fillStyle=NOTEBOOK_CONFIG.strokeColor;ctx.shadowBlur=0.6;ctx.shadowColor=NOTEBOOK_CONFIG.strokeColor;
+    const steps=Math.max(1,Math.floor(dist/2));
+    for(let i=1;i<=steps;i++){
+      const t=i/steps,ix=lastX+dx*t,iy=lastY+dy*t,iw=lastWidth+(newW-lastWidth)*t;
+      ctx.beginPath();ctx.arc(ix,iy,iw/2,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
+    lastX=p.x;lastY=p.y;lastWidth=newW;lastTime=now;
+  }
+  function stop(){if(!drawing)return;drawing=false}
+  canvas.addEventListener('pointerdown',start);
+  canvas.addEventListener('pointermove',draw);
+  canvas.addEventListener('pointerup',stop);
+  canvas.addEventListener('pointerleave',stop);
+  canvas.addEventListener('pointercancel',stop);
+}
+
+/* ===== HANZI WRITER ===== */
+function initHanziWriter(container,char){
+  container.innerHTML='';if(hwWriterInstance)hwWriterInstance=null;
+  const c = char.length>1 ? char[0] : char;
+  try{
+    hwWriterInstance=HanziWriter.create(container,c,{
+      width:container.clientWidth||120,height:container.clientHeight||120,padding:10,
+      showOutline:true,strokeAnimationSpeed:1,delayBetweenStrokes:400,
+      showCharacter:false,highlightColor:'#c0392b',outlineColor:'#d4b896',drawingColor:'#1a0f0a'
+    });
+    setTimeout(()=>{if(hwWriterInstance)hwWriterInstance.animateCharacter()},300);
+  }catch(e){
+    container.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:'Ma Shan Zheng';font-size:60px;color:#c0392b">${c}</div>`;
+  }
+}
+
+/* ===== МОДАЛКА ===== */
+function showLearnModal(word,isNew){
+  if(currentModal){currentModal.remove();currentModal=null}
+  if(!word)return;
+  const examples = collectExamples(word, 3);
+  const renderChar = word.char.length>1 ? word.char[0] : word.char;
+
+  const modal=document.createElement('div');modal.className='learn-modal';
+  modal.innerHTML=`
+    <div class="learn-card">
+      <div class="radical-header">
+        <div class="radical-big pulse" title="Озвучить">${renderChar}</div>
+        <div class="radical-info">
+          <div class="radical-name">${word.meaning||'слово'}</div>
+          <div class="radical-pinyin">${word.pinyin||''}</div>
+          <div class="radical-mean">${isNew?'✅ Добавлено в тетрадь!':'📖 Уже было в тетради'}${word.char.length>1?' · первый символ':''}</div>
+        </div>
+      </div>
+      <div class="writer-section">
+        <div class="hw-box" id="hwContainer"></div>
+        <div class="writer-controls">
+          <div class="stroke-label">Порядок черт</div>
+          <button id="replayAnimBtn" style="background:linear-gradient(135deg,#e67e22,#d35400);color:#fff">▶ Анимация</button>
+          <button id="nbShow" style="background:linear-gradient(135deg,#2980b9,#3498db);color:#fff">👁️ Образец</button>
+          <button id="nbHide" style="display:none;background:linear-gradient(135deg,#2980b9,#3498db);color:#fff">🙈 Скрыть</button>
+        </div>
+      </div>
+      <div class="draw-section">
+        <div class="brush-controls">
+          <div class="brush-slider-wrapper">
+            <label>🖌️</label>
+            <input type="range" id="brushSlider" min="${NOTEBOOK_CONFIG.minBrushWidth}" max="${NOTEBOOK_CONFIG.maxBrushWidth}" value="${currentBrushWidth}" step="1">
+            <div class="brush-preview" id="brushPreview" style="width:${currentBrushWidth}px;height:${currentBrushWidth}px"></div>
+          </div>
+        </div>
+        <div class="draw-canvas-container"><canvas class="draw-canvas" id="nbCanvas"></canvas></div>
+        <div class="quality-bar"><div class="quality-fill" id="qFill"></div></div>
+        <div class="quality-text" id="qText">Нарисуй что-нибудь</div>
+        <div class="draw-tools">
+          <button class="clear-draw" id="nbClear">🧽 Очистить</button>
+          <button id="nbCheck" style="background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff">✅ Проверить</button>
+        </div>
+      </div>
+      ${examples.length>0?`<div class="examples-row">${examples.map(w=>`<div class="example-word" data-char="${w.char}"><div class="ex-char">${w.char}</div><div class="ex-pinyin">${w.pinyin}</div><div class="ex-mean">${w.meaning}</div></div>`).join('')}</div>`:''}
+      <div class="notebook-actions">
+        <button class="close-learn" id="nbClose">✖ Закрыть</button>
+        <button class="notebook-btn" id="nbAdd">📓 В тетрадь</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);currentModal=modal;
+
+  initHanziWriter(modal.querySelector('#hwContainer'),word.char);
+  modal.querySelector('#replayAnimBtn').onclick=()=>{if(hwWriterInstance)hwWriterInstance.animateCharacter()};
+
+  const cvs=modal.querySelector('#nbCanvas');
+  initNotebookCanvas(cvs);setupCalligraphyBrush(cvs);
+  const slider=modal.querySelector('#brushSlider'),preview=modal.querySelector('#brushPreview');
+  slider.oninput=()=>{currentBrushWidth=parseInt(slider.value);preview.style.width=currentBrushWidth+'px';preview.style.height=currentBrushWidth+'px'};
+
+  modal.querySelector('#nbShow').onclick=()=>{
+    showExampleOnCanvas(cvs,renderChar);
+    modal.querySelector('#nbShow').style.display='none';
+    modal.querySelector('#nbHide').style.display='inline-block';
+  };
+  modal.querySelector('#nbHide').onclick=()=>{
+    clearNotebookCanvas(cvs);
+    modal.querySelector('#nbShow').style.display='inline-block';
+    modal.querySelector('#nbHide').style.display='none';
+  };
+  modal.querySelector('#nbClear').onclick=()=>{
+    clearNotebookCanvas(cvs);
+    modal.querySelector('#qFill').style.width='0%';
+    modal.querySelector('#qText').textContent='Нарисуй что-нибудь';
+  };
+  modal.querySelector('#nbCheck').onclick=()=>{
+    const r=checkQuality(cvs);
+    modal.querySelector('#qFill').style.width=r.score+'%';
+    modal.querySelector('#qFill').style.background=r.color;
+    modal.querySelector('#qText').textContent=r.msg;
+  };
+
+  modal.querySelector('.radical-big').onclick=()=>speakChinese(renderChar);
+  modal.querySelectorAll('.example-word').forEach(el=>{el.onclick=()=>speakChinese(el.dataset.char)});
+
+  modal.querySelector('#nbClose').onclick=()=>{modal.remove();currentModal=null;hwWriterInstance=null;pendingWord=null};
+  modal.querySelector('#nbAdd').onclick=()=>{
+    const ok=addToCopybookOnly(word.char,word.pinyin,word.meaning);
+    showToast(ok?`✅ "${word.char}" в тетради!`:`⚠️ Уже есть`);
+  };
+  modal.onclick=e=>{if(e.target===modal){modal.remove();currentModal=null;hwWriterInstance=null;pendingWord=null}};
+
+  speakChinese(renderChar);
+}
+
+/* ===== ИНИЦИАЛИЗАЦИЯ ===== */
+function initGame(){
+  let pairs;
+  if(currentLevel === 'all'){
+    pairs = getAllPairsForGame();
+  } else {
+    pairs = getAllPairsForLevel(currentLevel);
+  }
+  // Ограничиваем игру разумным количеством пар за раунд
+  const MAX_PAIRS = 20;
+  if(pairs.length > MAX_PAIRS){
+    pairs = shuffleArr([...pairs]).slice(0, MAX_PAIRS);
+  }
+
+  if(!pairs.length){
+    msgEl.textContent='❌ Нет данных. Проверьте dictionary-data.js и файлы радикалов';
+    dbStatus.textContent='❌ База пуста';
+    return;
+  }
+
+  totalPairs=pairs.length;
+  matchedCount=0;score=0;streak=0;selectedId=null;pendingWord=null;
+  tiles=[];
+
+  let id=0;
+  pairs.forEach((p,i)=>{
+    tiles.push({
+      id:id++,pairId:i,type:'key',
+      char:p.keyChar,pinyin:p.keyPinyin,name:p.keyMeaning,
+      keyChar:p.keyChar,removed:false
+    });
+    tiles.push({
+      id:id++,pairId:i,type:'word',
+      char:p.wordChar,pinyin:p.wordPinyin,name:p.wordMeaning,
+      keyChar:p.keyChar,
+      wordData:{char:p.wordChar,pinyin:p.wordPinyin,meaning:p.wordMeaning},
+      removed:false
+    });
+  });
+
+  shuffleArr(tiles);
+  updateUI();
+  renderGrid();
+  startTimer();
+  msgEl.textContent=`🎮 Найди ${totalPairs} пар: ключ ↔ слово`;
+  dbStatus.textContent=`🎮 В игре: ${totalPairs} пар`;
+}
+
+/* ===== РЕНДЕР ===== */
+function renderGrid(){
+  if(!gridEl)return;
+  gridEl.innerHTML='';
+  for(const t of tiles){
+    if(t.removed)continue;
+    const d=document.createElement('div');
+    d.className='tile'+(selectedId===t.id?' selected':'');
+    const badge=t.type==='word'?'📖':'🔑';
+    d.innerHTML=`
+      <div class="tile-badge">${badge}</div>
+      <div class="main-char">${t.char}</div>
+      <div class="pinyin">${t.pinyin||''}</div>
+      <div class="info">${t.name||(t.type==='word'?'слово':'ключ')}</div>
+      <div class="sound-badge">🔊</div>
+    `;
+    d.querySelector('.sound-badge').addEventListener('click',e=>{
+      e.stopPropagation();speakChinese(t.char);
+    });
+    d.addEventListener('click',e=>{
+      if(e.target.classList.contains('sound-badge'))return;
+      speakChinese(t.char);
+      onTileClick(t,e);
+    });
+    gridEl.appendChild(d);
+  }
+}
+
+/* ===== КЛИК ===== */
+function onTileClick(clicked,event){
+  if(clicked.removed)return;
+
+  if(selectedId===null){
+    selectedId=clicked.id;
+    renderGrid();
+    msgEl.textContent=`✅ Выбрано: ${clicked.char} (${clicked.type==='word'?'слово':'ключ'})`;
+    return;
+  }
+
+  const sel=tiles.find(t=>t.id===selectedId);
+  if(!sel){selectedId=null;return}
+
+  if(sel.id===clicked.id){
+    selectedId=null;renderGrid();
+    msgEl.textContent='🔍 Снято';
+    return;
+  }
+
+  if(sel.type===clicked.type){
+    msgEl.textContent='⚠️ Нужно выбрать ключ и слово (разные типы)';
+    selectedId=null;renderGrid();
+    return;
+  }
+
+  if(sel.pairId===clicked.pairId){
+    const wordTile=sel.type==='word'?sel:clicked;
+    sel.removed=true;clicked.removed=true;
+    matchedCount++;streak++;
+
+    let points=10+Math.floor(streak/2)*2;
+    const sp=calcSpeedBonus();
+    points+=sp.bonus;
+    if(sp.label&&event){
+      const r=event.target.getBoundingClientRect();
+      showFloatingBonus(sp.label,r.left+r.width/2-30,r.top-20);
+    }
+    score+=points;
+    if(streak>record)record=streak;
+
+    selectedId=null;
+    updateUI();
+    renderGrid();
+
+    if(wordTile.wordData){
+      const wd={...wordTile.wordData,keyChar:wordTile.keyChar};
+      const isNew=addToCopybookOnly(wd.char,wd.pinyin,wd.meaning);
+      pendingWord=wd;
+      showLearnModal(wd,isNew);
+    }
+
+    msgEl.textContent=`✅ +${points}${sp.bonus>0?' ⚡':''} (🔥${streak})`;
+
+    if(matchedCount===totalPairs){
+      stopTimer();
+      msgEl.textContent='🏆 УРОВЕНЬ ПРОЙДЕН!';
+      speakChinese('恭喜你');
+    }
+  }else{
+    streak=0;
+    updateUI();
+    msgEl.textContent=`❌ ${sel.char} ≠ ${clicked.char}. Попробуй ещё!`;
+    selectedId=null;
+    renderGrid();
+  }
+}
+
+/* ===== UI ===== */
+function updateUI(){
+  if(scoreSpan)scoreSpan.textContent=score;
+  if(remainSpan)remainSpan.textContent=totalPairs-matchedCount;
+  if(streakSpan)streakSpan.textContent=streak;
+  if(recordSpan)recordSpan.textContent=record;
+  if(progressFill&&totalPairs>0)progressFill.style.width=((matchedCount/totalPairs)*100)+'%';
+}
+
+/* ===== ДЕЙСТВИЯ ===== */
+function shuffleTiles(){
+  if(!tiles.length){initGame();return}
+  const rem=tiles.filter(t=>!t.removed);
+  const rm=tiles.filter(t=>t.removed);
+  shuffleArr(rem);
+  tiles=[...rem,...rm];
+  selectedId=null;
+  renderGrid();
+  msgEl.textContent='🃏 Перемешано!';
+}
+function showHint(){
+  const active=tiles.filter(t=>!t.removed);
+  for(let i=0;i<active.length;i++){
+    for(let j=i+1;j<active.length;j++){
+      if(active[i].pairId===active[j].pairId&&active[i].type!==active[j].type){
+        msgEl.textContent=`💡 "${active[i].char}" ↔ "${active[j].char}"`;
+        const nodes=gridEl.querySelectorAll('.tile');
+        let idx=0;
+        for(const t of tiles){
+          if(t.removed)continue;
+          if(t.id===active[i].id||t.id===active[j].id){
+            if(nodes[idx]){
+              nodes[idx].style.borderColor='#f7b42c';
+              nodes[idx].style.boxShadow='0 0 0 4px rgba(247,180,44,.5),0 5px 0 #8b6946';
+            }
+          }
+          idx++;
+        }
+        setTimeout(()=>renderGrid(),2000);
+        return;
+      }
+    }
+  }
+  msgEl.textContent='💡 Все пары найдены!';
+}
+
+/* ===== СОБЫТИЯ ===== */
+document.querySelectorAll('.level-btn').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentLevel=btn.dataset.level;
+    initGame();
+  };
+});
+document.getElementById('hintBtn').onclick=showHint;
+document.getElementById('shuffleBtn').onclick=shuffleTiles;
+document.getElementById('resetGameBtn').onclick=()=>initGame();
+
+/* ===== СТАРТ ===== */
+window.addEventListener('load',()=>{
+  const wait=setInterval(()=>{
+    if((typeof HSK_DICT!=='undefined' && Object.keys(CHAR_RADICAL).length>0) || performance.now()>3000){
+      clearInterval(wait);
+      let totalAvailable = 0;
+      ['hsk1','hsk2','hsk3','hsk4','hsk5','hsk6','hsk6_chars'].forEach(lv=>{
+        totalAvailable += getAllPairsForLevel(lv).length;
+      });
+      dbStatus.textContent=`📚 Доступно пар по всем уровням: ${totalAvailable}`;
+      initGame();
+    }
+  },150);
+});
+</script>
+</body>
+</html>
