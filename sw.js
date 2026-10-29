@@ -1,20 +1,26 @@
 /* sw.js — Service Worker
    Кэширует страницы, скрипты, стили, базы данных.
    Audio/* кэшируется по факту запроса (runtime).
+   mahjong.html и его файлы данных кэшируются сразу при install.
 */
-const CACHE_NAME = 'hanzi-app-v4';
-const RUNTIME_CACHE = 'hanzi-runtime-v4';
+const CACHE_NAME = 'hanzi-app-v5';
+const RUNTIME_CACHE = 'hanzi-runtime-v5';
 
 // Файлы, которые кэшируем сразу при установке
 const PRECACHE_ASSETS = [
   './',
   './index.html',
+  './mahjong.html',
   './trainer.html',
   './trainer.js',
   './dictionary.html',
   './grammar.html',
   './dictionary-data.js',
   './hsk-data.js',
+  './radicals-info.js',
+  './char-radical-hsk12.js',
+  './char-radical-hsk34.js',
+  './char-radical-hsk56.js',
   './manifest.json'
 ];
 
