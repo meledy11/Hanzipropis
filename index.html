@@ -95,9 +95,10 @@
         }
         .menu button:active { background: #eef2f7; }
 
+        /* было repeat(7, 1fr) — стало repeat(8, 1fr) под новую вкладку Маджонг */
         .tabs {
           position: sticky; top: calc(env(safe-area-inset-top) + 108px); z-index: 25;
-          display: grid; grid-template-columns: repeat(7, 1fr);
+          display: grid; grid-template-columns: repeat(8, 1fr);
           gap: 3px; margin: 10px 12px 0; padding: 4px;
           background: #e6eaf1; border-radius: 12px;
         }
@@ -110,6 +111,7 @@
         .tab.active { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(15,23,42,0.08); }
         .tab.go { color: var(--blue); }
         .tab.trainer { color: #16835f; }
+        .tab.mahjong { color: #b45309; }
 
         .pane { display: none; padding: 14px 12px 20px; }
         .pane.active { display: block; }
@@ -297,6 +299,7 @@
         <button id="saveFileBtn" type="button">В Файлы</button>
         <button id="importBtn" type="button">Импорт</button>
         <button id="downloadPrintBtn" type="button">HTML для печати</button>
+        <button id="menuMahjongBtn" type="button">🀄 Маджонг</button>
         <button id="menuDictBtn" type="button">📚 Словарь</button>
         <button id="menuGrammarBtn" type="button">📖 Грамматика</button>
         <button id="menuTrainerBtn" type="button">✍️ Тренажёр</button>
@@ -313,6 +316,7 @@
     <button class="tab" id="tabHsk3" type="button">HSK3</button>
     <button class="tab trainer" id="tabTrainer" type="button">Тренажёр ↗</button>
     <button class="tab go" id="tabGrammar" type="button">Грам. ↗</button>
+    <button class="tab mahjong" id="tabMahjong" type="button">🀄 Маджонг ↗</button>
 </nav>
 
 <section class="pane active" id="pane-anim"><div class="cards" id="cards"></div></section>
@@ -396,6 +400,7 @@
     const tabHsk3 = document.getElementById('tabHsk3');
     const tabTrainer = document.getElementById('tabTrainer');
     const tabGrammar = document.getElementById('tabGrammar');
+    const tabMahjong = document.getElementById('tabMahjong');
     const paneAnim = document.getElementById('pane-anim');
     const panePrint = document.getElementById('pane-print');
     const paneHsk1 = document.getElementById('pane-hsk1');
@@ -1001,11 +1006,20 @@
       location.href = 'grammar.html';
     });
 
+    tabMahjong.addEventListener('click', () => {
+      try { saveCurrent(); } catch (e) {}
+      location.href = 'mahjong.html';
+    });
+
     // ============================================================
     // МЕНЮ
     // ============================================================
     menuBtn.addEventListener('click', () => menu.classList.toggle('open'));
 
+    document.getElementById('menuMahjongBtn').addEventListener('click', () => {
+      try { saveCurrent(); } catch (e) {}
+      location.href = 'mahjong.html';
+    });
     document.getElementById('menuDictBtn').addEventListener('click', () => {
       try { saveCurrent(); } catch (e) {}
       location.href = 'dictionary.html';
@@ -1141,6 +1155,9 @@
       }
       if (e.altKey && (e.key === 't' || e.key === 'T' || e.key === 'е' || e.key === 'Е')) {
         location.href = 'trainer.html';
+      }
+      if (e.altKey && (e.key === 'm' || e.key === 'M' || e.key === 'ь' || e.key === 'Ь')) {
+        location.href = 'mahjong.html';
       }
     });
 </script>
